@@ -1,0 +1,524 @@
+
+class WebGPU {
+    async #loadTexture(filePath) {
+        var response = await fetch(filePath);
+        const imageBitmap = await createImageBitmap(await response.blob());
+
+        let texture = this.device.createTexture({
+            size: [imageBitmap.width, imageBitmap.height, 1],
+            format: "rgba8unorm",
+            usage: GPUTextureUsage.TEXTURE_BINDING |
+            GPUTextureUsage.COPY_DST |
+            GPUTextureUsage.RENDER_ATTACHMENT
+        });
+
+        this.device.queue.copyExternalImageToTexture(
+            {source: imageBitmap},
+            {texture: texture},
+            [imageBitmap.width, imageBitmap.height],
+        );
+
+        return texture;
+    }
+
+    constructor() {
+        this.pipeline = {};
+    }
+
+    static create() {
+        return new WebGPU();
+    }
+
+    static async initGPU(pipeline) {
+        await pipeline.fetchGPU();
+
+        let res = new vec2(3200, 2000);        
+        await pipeline.initCanvas({
+            resolution: res,
+        });
+
+        var gBufferWriteShader = await gBufferWrite.get({
+            normalMapping: false,
+            device: pipeline.device,
+        })
+
+        await pipeline.gBufferWritePipeline(gBufferWriteShader);
+
+        var lightPrePassShader = await lightPrePass.get({
+            device: pipeline.device,
+        });
+
+        await pipeline.loadRenderPass({
+            textureFilter: "linear",
+        });
+
+        await pipeline.lightPrePassPipeline(lightPrePassShader);
+
+        let obj = await ObjLoader.create("assets/models/gun.obj");
+        await pipeline.loadModel(obj.vertices , obj.vertexNumber);
+        pipeline.setCameraMatrix(.1, 100);
+    }
+
+    async fetchGPU() {
+        this.adapter = await navigator.gpu?.requestAdapter({
+            powerPreference: 'high-performance',
+        });
+        this.device = await this.adapter?.requestDevice();
+
+        const adapterInfo = await this.adapter.requestAdapterInfo();
+        console.log(adapterInfo.vendor);
+
+        if (!this.device) {
+            alert("WebGPU isn't supported on your browser");
+            console.error("WebGPU isn't supported on your browser");
+            return null;
+        }
+
+    }
+
+    async initCanvas(inputs) {
+        this.canvas = document.getElementById("canvas");
+        this.context = canvas.getContext("webgpu");
+        this.canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+
+        this.canvas.width = inputs.resolution.x; 
+        this.canvas.height = inputs.resolution.y;
+
+        var device = this.device;
+        this.context.configure({
+            device,
+            format: this.canvasFormat
+        });
+
+        this.depthTexture = this.device.createTexture({
+            size: [this.canvas.width, this.canvas.height],
+            format: 'depth24plus',
+            usage: GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+
+        this.gBufferTextureAlbedo = device.createTexture({
+            size: [this.canvas.width, this.canvas.height],
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            format: 'bgra8unorm',
+        });
+
+        this.gBufferTexturePosition = device.createTexture({
+            size: [this.canvas.width, this.canvas.height],
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            format: 'rgba16float',
+        });
+
+        this.gBufferTextureNormal = device.createTexture({
+            size: [this.canvas.width, this.canvas.height],
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            format: 'rgba16float',
+        });
+
+        this.gBufferTextureProperties = device.createTexture({
+            size: [this.canvas.width, this.canvas.height],
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            format: 'rgba16float',
+        });
+    }
+
+    async loadRenderPass(inputs) {
+        this.gBufferPass = {
+            label: "gBufferPass",
+            colorAttachments: [
+                {
+                    view: this.gBufferTextureAlbedo.createView(),
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: "clear",
+                    storeOp: "store"
+                },
+                {
+                    view: this.gBufferTexturePosition.createView(),
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: "clear",
+                    storeOp: "store"
+                },
+                {
+                    view: this.gBufferTextureNormal.createView(),
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: "clear",
+                    storeOp: "store"
+                },
+                {
+                    view: this.gBufferTextureProperties.createView(),
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: "clear",
+                    storeOp: "store"
+                }    
+            ],
+
+            depthStencilAttachment: {
+                depthClearValue: 1.0,
+                depthLoadOp: 'clear',
+                depthStoreOp: 'store',
+            },
+        };
+
+        this.lightPrePass = {
+            label: "Light Prepass",
+            colorAttachments: [
+                {
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: "clear",
+                    storeOp: "store"
+                }  
+            ],
+
+            depthStencilAttachment: {
+                depthClearValue: 1.0,
+                depthLoadOp: 'clear',
+                depthStoreOp: 'store',
+            },
+        };        
+
+        this.sampler = this.device.createSampler({
+            magFilter: inputs.textureFilter,
+            minFilter: inputs.textureFilter,
+            addressModeU: 'repeat',
+            addressModeV: 'repeat',
+        });
+    }
+
+    async lightPrePassPipeline(shaderModule) {
+        
+
+        this.gBufferTexturesBindGroupLayout = this.device.createBindGroupLayout({
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {
+                        sampleType: 'unfilterable-float',
+                    },
+                },
+                {
+                    binding: 1,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {
+                        sampleType: 'unfilterable-float',
+                    },
+                },
+                {
+                    binding: 2,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {
+                        sampleType: 'unfilterable-float',
+                    },
+                },
+                {
+                    binding: 3,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {
+                        sampleType: 'unfilterable-float',
+                    },
+                },
+            ],
+        });
+        var pipeline = this.device.createRenderPipeline({
+            label: "lightPrePass",
+            layout: this.device.createPipelineLayout({
+                bindGroupLayouts: [
+                    this.matrixBindGroupLayout,
+                    this.gBufferTexturesBindGroupLayout,
+                ],
+            }),
+            vertex: {
+                module: shaderModule.module, 
+                entryPoint: "vs",
+            },
+            fragment: {
+                module: shaderModule.module,
+                entryPoint: "fs",
+                targets: [{format: this.canvasFormat}]
+            },
+            primitive: {
+                topology: "triangle-list",
+                cullMode: "none",
+            },
+
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: 'depth24plus',
+            }
+        });
+
+        this.pipeline["lightPrePass"] = pipeline;
+    }
+
+    async gBufferWritePipeline(shaderModule) {
+        this.matrixBindGroupLayout = this.device.createBindGroupLayout({
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    buffer: {
+                        type: 'uniform',
+                    }
+                }
+            ]
+        });
+
+        this.textureBindGroupLayout = this.device.createBindGroupLayout({
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    sampler: {},
+                },
+                {
+                    binding: 1,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {},
+                },
+                {
+                    binding: 2,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {},
+                },
+                {
+                    binding: 3,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {},
+                },
+                {
+                    binding: 4,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {},
+                },
+                {
+                    binding: 5,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {},
+                },
+            ]
+        });
+
+        var pipeline = this.device.createRenderPipeline({
+            label: "gBufferWrite",
+            layout: this.device.createPipelineLayout({
+                bindGroupLayouts: [
+                    this.matrixBindGroupLayout,
+                    this.textureBindGroupLayout,
+                ],
+            }),
+            vertex: {
+                module: shaderModule.module, 
+                entryPoint: "vs",
+                buffers: [{
+                      arrayStride: shaderModule.arrayStride,
+                      attributes: shaderModule.attributes
+                }]
+            },
+            fragment: {
+                module: shaderModule.module,
+                entryPoint: "fs",
+                targets: [
+                    {format: "bgra8unorm"},
+                    {format: "rgba16float"},
+                    {format: "rgba16float"},
+                    {format: "rgba16float"}
+                ]
+            },
+            primitive: {
+                topology: "triangle-list",
+                cullMode: "none",
+            },
+
+            depthStencil: {
+                depthWriteEnabled: true,
+                depthCompare: 'less',
+                format: 'depth24plus',
+            }
+        });
+
+        this.pipeline["gBufferWrite"] = pipeline;
+    }
+
+    setUniformBuffer() {
+        this.device.queue.writeBuffer(
+            this.uniformBuffer, 
+            0,
+            this.perspectiveMatrix.buffer
+        );
+
+        this.device.queue.writeBuffer(
+            this.uniformBuffer, 
+            64,
+            this.translationMatrix.buffer
+        );
+        
+        this.device.queue.writeBuffer(
+            this.uniformBuffer, 
+            128,
+            this.rotationMatrix.buffer
+        );
+
+        this.device.queue.writeBuffer(
+            this.uniformBuffer, 
+            192,
+            this.invRotationMatrix.buffer
+        );
+    }
+
+    render() {
+        let canvasTexture = this.context.getCurrentTexture();
+
+        this.lightPrePass.colorAttachments[0].view = canvasTexture.createView();
+        this.lightPrePass.depthStencilAttachment.view = this.depthTexture.createView();
+        this.gBufferPass.depthStencilAttachment.view = this.depthTexture.createView();
+
+        this.device.queue.writeBuffer(
+            this.lightBuffer, 
+            0,
+            new Float32Array([0, 0, 1, 0, 1, 1, 1, 1, 0.2]).buffer
+        );
+
+        this.setUniformBuffer(); 
+
+        const encoder = this.device.createCommandEncoder({label: "Encoder"});
+
+
+        // gBufferPrepass
+        const gBufferPass = encoder.beginRenderPass(this.gBufferPass);
+
+        gBufferPass.setPipeline(this.pipeline["gBufferWrite"]);
+        gBufferPass.setVertexBuffer(0, this.vertexBuffer);
+        gBufferPass.setBindGroup(0, this.uniformBindGroup);
+        gBufferPass.setBindGroup(1, this.textureBindGroup);
+        gBufferPass.draw(this.vertexBufferLength);
+        gBufferPass.end();
+
+        // Light Prepass
+        const lightPrePass = encoder.beginRenderPass(this.lightPrePass);
+
+        lightPrePass.setPipeline(this.pipeline["lightPrePass"]);
+        lightPrePass.setBindGroup(0, this.uniformBindGroup);
+        lightPrePass.setBindGroup(1, this.gBufferBindGroup);
+        lightPrePass.draw(6);
+        lightPrePass.end();
+
+        
+        const commandBuffer = encoder.finish();
+        this.device.queue.submit([commandBuffer]);
+
+        this.deltaTime = (Date.now() - this.prevTime);
+        this.prevTime = Date.now();         
+    }
+
+    async loadModel(vertexArray, vertices) {
+        this.vertexBuffer = this.device.createBuffer({
+            size: vertexArray.byteLength,
+            usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+            mappedAtCreation: true,
+        });
+        this.vertexBufferLength = vertices;
+        
+        new Float32Array(this.vertexBuffer.getMappedRange()).set(vertexArray);
+        this.vertexBuffer.unmap();
+
+        let name = "gun2";
+        try {
+            this.texture = await this.#loadTexture(`assets/${name}/albedo.png`);
+            this.normalMap = await this.#loadTexture(`assets/${name}/normal.png`);
+            this.ao = await this.#loadTexture(`assets/${name}/ao.png`);
+            this.metallicMap = await this.#loadTexture(`assets/${name}/metallic.png`);
+            this.roughnessMap = await this.#loadTexture(`assets/${name}/roughness.png`);
+        } catch(err) {
+            this.texture = await this.#loadTexture(`assets/${name}/albedo.jpg`);
+            this.normalMap = await this.#loadTexture(`assets/${name}/normal.jpg`);
+            this.ao = await this.#loadTexture(`assets/${name}/ao.jpg`);
+            this.metallicMap = await this.#loadTexture(`assets/${name}/metallic.jpg`);
+            this.roughnessMap = await this.#loadTexture(`assets/${name}/roughness.jpg`);
+        }
+    }
+
+
+    setCameraMatrix(near, far) {
+        this.perspectiveMatrix = mat4.createPerspectiveMatrix(this.canvas.width / this.canvas.height, near, far);
+        this.translationMatrix = mat4.createTranslationMatrix(0, 0, 2);
+        this.rotationMatrix;
+        this.invRotationMatrix;
+
+        this.uniformBuffer = this.device.createBuffer({
+            size: 64 * 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST 
+        });
+
+        this.lightBuffer = this.device.createBuffer({
+            size: 48,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST 
+        });
+
+        this.uniformBindGroup = this.device.createBindGroup({
+            layout: this.matrixBindGroupLayout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: {
+                        buffer: this.uniformBuffer,
+                    },
+                    
+                },   
+            ]
+        });
+
+        this.textureBindGroup = this.device.createBindGroup({
+            layout: this.pipeline["gBufferWrite"].getBindGroupLayout(1),
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.sampler,
+                },
+                {
+                    binding: 1,
+                    resource: this.texture.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.normalMap.createView(),
+                },
+                {
+                    binding: 3,
+                    resource: this.ao.createView(),
+                },
+                {
+                    binding: 4,
+                    resource: this.roughnessMap.createView(),
+                },
+                {
+                    binding: 5,
+                    resource: this.metallicMap.createView(),
+                },
+
+            ]
+        });
+
+        this.gBufferBindGroup = this.device.createBindGroup({
+            layout: this.gBufferTexturesBindGroupLayout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.gBufferTextureAlbedo.createView(),
+                },
+                {
+                    binding: 1,
+                    resource: this.gBufferTexturePosition.createView(),
+                },
+                {
+                    binding: 2,
+                    resource: this.gBufferTextureNormal.createView(),
+                },
+                {
+                    binding: 3,
+                    resource: this.gBufferTextureProperties.createView(),
+                },
+
+            ]
+        });
+    }
+}

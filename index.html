@@ -1,0 +1,69 @@
+<html>
+    <link rel="stylesheet" href="stylesheet.css">
+    <canvas id="canvas" width="3200" height="1730"></canvas>
+    <!-- Body -->
+    <b><div id="fps" class="top-left" style="font-family: sans-serif; color: white;"></div></b>
+
+    <div id="menu" class="text-block" style="font-family: sans-serif; color: white; overflow-y: scroll; display: none;">
+        <p style="text-align: center;"><b>Settings</b></p>
+        <p>Display Resolution: &nbsp
+            <span class="custom-select" >
+                <select id="resolution">
+                  <option value="1">default</option>
+                  <option value="2">pristine</option>
+                  <option value="1080">1920 x 1080</option>
+                  <option value="720">1280 x 720</option>
+                  <option value="480">854 x 480</option>
+                  <option value="360">640 x 360</option>
+                </select>
+            </span>
+            </p>
+        
+
+        <p>Normal Mapping: &nbsp
+        <span class="custom-select" >
+            <select id="normalMapping">
+              <option value="true">on</option>
+              <option value="false">off</option>
+            </select>
+        </span>
+        </p>
+
+        <p>Texture Filtering: &nbsp
+            <span class="custom-select" >
+                <select id="textureFilter">
+                  <option value="linear">bilinear</option>
+                  <option value="nearest">off</option>
+                </select>
+            </span>
+            </p>
+
+          <p>Anti Aliasing: &nbsp
+          <span class="custom-select" >
+              <select id="textureFilter">
+                <option value="off">off</option>
+                <option value="MSAA">MSAA</option>
+              </select>
+          </span>
+          </p>
+    </div>
+
+
+
+    <!-- Scripts -->
+    <script src="js/vector.js"></script>
+    <script src="js/matrix.js"></script>
+    <script src="js/grass.js"></script>
+    <script src="js/obj.js"></script>
+    <script src="js/object.js"></script>
+    <script src="js/keyboard.js"></script>
+
+    <script src="js/shaderModule.js"></script>
+    <script src="shaders/gBufferWrite/gBufferWrite.js"></script>
+    <script src="shaders/lightPrePass/lightPrePass.js"></script>
+
+
+    <script src="js/webgpu.js"></script>
+    <script src="js/gameEngine.js"></script>
+    <script src="js/main.js"></script>
+</html>

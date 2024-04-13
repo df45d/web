@@ -1,0 +1,9 @@
+
+    static multiplyVec4(mat, vec) {
+        return new vec4(
+            mat.a11*vec.x + mat.a12*vec.y + mat.a13*vec.z + mat.a14*vec.w,
+            mat.a21*vec.x + mat.a22*vec.y + mat.a23*vec.z + mat.a24*vec.w,
+            mat.a31*vec.x + mat.a32*vec.y + mat.a33*vec.z + mat.a34*vec.w,
+            mat.a41*vec.x + mat.a42*vec.y + mat.a43*vec.z + mat.a44*vec.w,
+        );
+    } 
