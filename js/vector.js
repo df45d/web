@@ -74,7 +74,7 @@ class vec3 {
         
         let length = v.length();
         // make sure we don't divide by 0.
-        if (length > 0.00001) {
+        if (length != 0) {
             dst.x = v.x / length;
             dst.y = v.y / length;
             dst.z = v.z / length;

@@ -2,7 +2,7 @@ struct Matrices {
     projectionMatrix : mat4x4<f32>,
     camTranslationMatrix : mat4x4<f32>,
     camRotationMatrix : mat4x4<f32>,
-    invCamRotationMatrix : mat4x4<f32>,
+    invCamRotationMatrix : mat3x3<f32>,
 }
 
 struct vsOutput {
@@ -23,23 +23,23 @@ struct vsOutput {
     @location(3) tangent: vec3<f32>) -> vsOutput {
 
     var vsOut: vsOutput;
-    let aPosition = vec4f(position, 1) * matrices.camTranslationMatrix * matrices.camRotationMatrix;
-    vsOut.uv = uv;
-    
-    var normalR = (vec4f(normalize(normal), 0) * (matrices.invCamRotationMatrix)).xyz;
+    let fragPosition = vec4f(position, 1) * matrices.camTranslationMatrix * matrices.camRotationMatrix;
 
-    vsOut.normal = normalize(normalR);
+    let invMat = transpose(matrices.invCamRotationMatrix);
+    let invNormal = vec3f(normal.x, normal.y, -normal.z);
+    let fragNormal = normalize(invNormal * transpose(matrices.invCamRotationMatrix));
 
-    let t = normalize((vec4f(normalize(tangent), 0) * (matrices.invCamRotationMatrix)).xyz); //normalize((vec4f(normalize(tangent), 1) * (matrices.invCamRotationMatrix)).xyz);
-    let N = normalize(normalR);
-    var T = normalize(t - dot(t, N) * N);
+    let t = normalize(tangent);
+    let N = fragNormal;
+    let T = normalize(t - dot(t, N) * N);
     let B = normalize(cross(N, T));
 
-    vsOut.biTangent = B;
+    vsOut.position = fragPosition.xyz;
+    vsOut.uv = uv;
+    vsOut.normal = fragNormal;
     vsOut.tangent = T;
+    vsOut.biTangent = B;
 
-    vsOut.position = vec3f(aPosition.x, aPosition.y, aPosition.z);
-
-    vsOut.fragPos = aPosition * matrices.projectionMatrix; 
+    vsOut.fragPos = fragPosition * matrices.projectionMatrix; 
     return vsOut;
 }

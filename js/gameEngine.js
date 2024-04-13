@@ -152,11 +152,10 @@ class gameEngine {
     }
 
     rotateCam(x, y) {
-        /*
         this.gpu.rotationMatrix = mat4.createRotationMatrixXY(-x, y);
-        this.gpu.invRotationMatrix = mat4.inverse(this.gpu.rotationMatrix);*/
-        this.gpu.rotationMatrix = mat4.lookAt(new vec3(0, 0, 0), this.pos);
-        this.gpu.invRotationMatrix = mat4.inverse(this.gpu.rotationMatrix);
+        this.gpu.invRotationMatrix = mat3.inverse(mat3.createRotationMatrixXY(-x, y));
+        //this.gpu.rotationMatrix = mat4.lookAt(new vec3(0, 0, 0), this.pos);
+        //this.gpu.invRotationMatrix = mat3.inverse(mat3.lookAt(new vec3(0, 0, 0), this.pos));
     }
     setCamPos(x, y, z) {
         this.gpu.translationMatrix = mat4.createTranslationMatrix(-x, -y, -z);

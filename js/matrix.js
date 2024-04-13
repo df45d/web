@@ -5,7 +5,56 @@ class mat3 {
         a21, a22, a23, 
         a31, a32, a33, 
     ) {
+        this.a11 = a11; this.a12 = a12; this.a13 = a13;
+        this.a21 = a21; this.a22 = a22; this.a23 = a23;
+        this.a31 = a31; this.a32 = a32; this.a33 = a33;
+    }
 
+    get buffer() {
+        var array = [this.a11, this.a12, this.a13, 0,
+                     this.a21, this.a22, this.a23, 0,
+                     this.a31, this.a32, this.a33];
+        return new Float32Array(array);        
+    }
+
+    static inverse(m) {
+        let det = m.a11 * (m.a22 * m.a33 - m.a23 * m.a32) -
+                  m.a12 * (m.a21 * m.a33 - m.a23 * m.a31) +
+                  m.a13 * (m.a21 * m.a32 - m.a22 * m.a31);
+
+        if (det === 0) {
+            return null; // Matrix is not invertible
+        }
+
+        let invDet = 1 / det;
+
+        return new mat3(
+            invDet * (m.a22 * m.a33 - m.a23 * m.a32),
+            invDet * (m.a13 * m.a32 - m.a12 * m.a33),
+            invDet * (m.a12 * m.a23 - m.a13 * m.a22),
+
+            invDet * (m.a23 * m.a31 - m.a21 * m.a33),
+            invDet * (m.a11 * m.a33 - m.a13 * m.a31),
+            invDet * (m.a13 * m.a21 - m.a11 * m.a23),
+
+            invDet * (m.a21 * m.a32 - m.a22 * m.a31),
+            invDet * (m.a12 * m.a31 - m.a11 * m.a32),
+            invDet * (m.a11 * m.a22 - m.a12 * m.a21)
+        );
+    }
+
+    static lookAt(eye, target) {
+        let dst = new Float32Array(9);
+        let up = new vec3(0, 1, 0);
+     
+        const zAxis = vec3.normalize(eye.sub(target));
+        const xAxis = vec3.normalize(vec3.cross(up, zAxis));
+        const yAxis = vec3.normalize(vec3.cross(zAxis, xAxis));
+     
+        dst[0] = xAxis.x;  dst[1] = xAxis.y;  dst[2] = xAxis.z; 
+        dst[3] = yAxis.x;  dst[4] = yAxis.y;  dst[5] = yAxis.z; 
+        dst[6] = zAxis.x;  dst[7] = zAxis.y;  dst[8] = zAxis.z;
+        return (new mat3(...dst));
     }
 
     static createRotationMatrixXY(x, y) {
@@ -50,7 +99,7 @@ class mat4 {
         this.a43 = a43;
         this.a44 = a44;
 
-        this.byteLength = 4 * 16;
+        this.byteLength = 4 * 9;
     }
 
     get buffer() {

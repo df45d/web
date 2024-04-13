@@ -445,7 +445,7 @@ class WebGPU {
         this.invRotationMatrix;
 
         this.uniformBuffer = this.device.createBuffer({
-            size: 64 * 4,
+            size: 64 * 3 + 48,
             usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST 
         });
 
