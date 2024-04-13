@@ -98,9 +98,8 @@ class gameEngine {
         else if (!this.keyboard.keyPressed["Escape"]){
             this.escapePressed = false; 
         };
-
         
-
+        // rotation
         if (this.keyboard.keyPressed["ArrowUp"]) {
             this.xDir += this.gpu.deltaTime / 15;
         };
@@ -114,8 +113,9 @@ class gameEngine {
             this.yDir += this.gpu.deltaTime / 15;
         };
 
-
+        // movement
         let movement = new vec3(0, 0, 0);
+
         if (this.keyboard.keyPressed["w"]) {
             movement.z += this.gpu.deltaTime / 150;
         };
@@ -128,9 +128,6 @@ class gameEngine {
         if (this.keyboard.keyPressed["a"]) {
             movement.x -= this.gpu.deltaTime / 150;
         };
-        movement.rotateY(this.yDir);
-        this.pos = this.pos.add(movement);
-
         if (this.keyboard.keyPressed["r"]) {
             this.pos.y += this.gpu.deltaTime / 150;
         }
@@ -138,12 +135,13 @@ class gameEngine {
             this.pos.y -= this.gpu.deltaTime / 150;
         };
 
-        this.rotateCam(this.xDir, this.yDir, 0);
+        movement.rotateY(this.yDir);
+        this.pos = this.pos.add(movement);
         this.setCamPos(...this.pos.array);
 
+        this.rotateCam(this.xDir, this.yDir, 0);
         
-        this.gpu.render();
-        
+        this.gpu.render();    
         if (!this.stop) {
             requestAnimationFrame(() => this.gameLoop());
         } else {
@@ -154,9 +152,15 @@ class gameEngine {
     rotateCam(x, y) {
         this.gpu.rotationMatrix = mat4.createRotationMatrixXY(-x, y);
         this.gpu.invRotationMatrix = mat3.inverse(mat3.createRotationMatrixXY(-x, y));
-        //this.gpu.rotationMatrix = mat4.lookAt(new vec3(0, 0, 0), this.pos);
-        //this.gpu.invRotationMatrix = mat3.inverse(mat3.lookAt(new vec3(0, 0, 0), this.pos));
+        // this.gpu.rotationMatrix = mat4.lookAt(new vec3(0, 0, 0), this.pos);
+        // this.gpu.invRotationMatrix = mat3.inverse(mat3.lookAt(new vec3(0, 0, 0), this.pos));
     }
+
+    lookAt(pos) {
+        this.gpu.rotationMatrix = mat4.lookAt(pos, this.pos);
+        this.gpu.invRotationMatrix = mat3.inverse(mat3.lookAt(pos, this.pos));
+    }
+
     setCamPos(x, y, z) {
         this.gpu.translationMatrix = mat4.createTranslationMatrix(-x, -y, -z);
     }

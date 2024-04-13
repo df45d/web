@@ -25,11 +25,10 @@ struct vsOutput {
     var vsOut: vsOutput;
     let fragPosition = vec4f(position, 1) * matrices.camTranslationMatrix * matrices.camRotationMatrix;
 
-    let invMat = transpose(matrices.invCamRotationMatrix);
-    let invNormal = vec3f(normal.x, normal.y, -normal.z);
+    let invNormal = normalize(vec3f(normal.x, normal.y, -normal.z));
     let fragNormal = normalize(invNormal * transpose(matrices.invCamRotationMatrix));
 
-    let t = normalize(tangent);
+    let t = normalize(tangent * transpose(matrices.invCamRotationMatrix));
     let N = fragNormal;
     let T = normalize(t - dot(t, N) * N);
     let B = normalize(cross(N, T));

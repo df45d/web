@@ -25,7 +25,7 @@ struct gBufferOut {
     var output = gBufferOut();
     output.albedo = vec4f(albedo.rgb, 0);
     output.position = vec4f(vsOut.position.xyz, 0);
-    output.normal = vec4f(normal, 1); 
+    output.normal = vec4f(normal, 0); 
     output.properties.r = roughness;
     output.properties.g = metallic; 
     output.properties.b = ao;

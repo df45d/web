@@ -38,7 +38,7 @@ class WebGPU {
         });
 
         var gBufferWriteShader = await gBufferWrite.get({
-            normalMapping: false,
+            normalMapping: true,
             device: pipeline.device,
         })
 
@@ -184,46 +184,48 @@ class WebGPU {
     }
 
     async lightPrePassPipeline(shaderModule) {
-        
-
         this.gBufferTexturesBindGroupLayout = this.device.createBindGroupLayout({
             entries: [
                 {
                     binding: 0,
                     visibility: GPUShaderStage.FRAGMENT,
-                    texture: {
-                        sampleType: 'unfilterable-float',
-                    },
+                    texture: {sampleType: 'unfilterable-float'},
                 },
                 {
                     binding: 1,
                     visibility: GPUShaderStage.FRAGMENT,
-                    texture: {
-                        sampleType: 'unfilterable-float',
-                    },
+                    texture: {sampleType: 'unfilterable-float'},
                 },
                 {
                     binding: 2,
                     visibility: GPUShaderStage.FRAGMENT,
-                    texture: {
-                        sampleType: 'unfilterable-float',
-                    },
+                    texture: {sampleType: 'unfilterable-float'},
                 },
                 {
                     binding: 3,
                     visibility: GPUShaderStage.FRAGMENT,
-                    texture: {
-                        sampleType: 'unfilterable-float',
-                    },
-                },
-            ],
+                    texture: {sampleType: 'unfilterable-float'},
+                }
+            ]
         });
+
+        this.lightDataBindGroupLayout = this.device.createBindGroupLayout({
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+                    buffer: {type: 'uniform'},
+                },
+            ]
+        });
+
         var pipeline = this.device.createRenderPipeline({
             label: "lightPrePass",
             layout: this.device.createPipelineLayout({
                 bindGroupLayouts: [
                     this.matrixBindGroupLayout,
                     this.gBufferTexturesBindGroupLayout,
+                    this.lightDataBindGroupLayout
                 ],
             }),
             vertex: {
@@ -375,7 +377,7 @@ class WebGPU {
         this.device.queue.writeBuffer(
             this.lightBuffer, 
             0,
-            new Float32Array([0, 0, 1, 0, 1, 1, 1, 1, 0.2]).buffer
+            new Float32Array([0, 0, 1, 1, 1, 1, 1, 1]).buffer
         );
 
         this.setUniformBuffer(); 
@@ -399,6 +401,7 @@ class WebGPU {
         lightPrePass.setPipeline(this.pipeline["lightPrePass"]);
         lightPrePass.setBindGroup(0, this.uniformBindGroup);
         lightPrePass.setBindGroup(1, this.gBufferBindGroup);
+        lightPrePass.setBindGroup(2, this.lightDataBindGroup);
         lightPrePass.draw(6);
         lightPrePass.end();
 
@@ -520,5 +523,15 @@ class WebGPU {
 
             ]
         });
+
+        this.lightDataBindGroup = this.device.createBindGroup({
+            layout: this.lightDataBindGroupLayout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: {buffer: this.lightBuffer},
+                }
+            ]
+        });   
     }
 }
