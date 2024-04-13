@@ -37,22 +37,28 @@ class WebGPU {
             resolution: res,
         });
 
-        var gBufferWriteShader = await gBufferWrite.get({
+        let gBufferWriteShader = await gBufferWrite.get({
             normalMapping: true,
             device: pipeline.device,
         })
 
         await pipeline.gBufferWritePipeline(gBufferWriteShader);
 
-        var lightPrePassShader = await lightPrePass.get({
-            device: pipeline.device,
-        });
-
         await pipeline.loadRenderPass({
             textureFilter: "linear",
         });
 
+        let lightPrePassShader = await lightPrePass.get({
+            device: pipeline.device,
+        });
+
         await pipeline.lightPrePassPipeline(lightPrePassShader);
+
+        var postProcessShader = await postProcess.get({
+            device: pipeline.device,
+        });
+
+        await pipeline.postProcessPipeline(postProcessShader);
 
         let obj = await ObjLoader.create("assets/models/gun.obj");
         await pipeline.loadModel(obj.vertices , obj.vertexNumber);
@@ -119,6 +125,12 @@ class WebGPU {
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
             format: 'rgba16float',
         });
+
+        this.lightPrePassBuffer = device.createTexture({
+            size: [this.canvas.width, this.canvas.height],
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            format: 'bgra8unorm',
+        });
     }
 
     async loadRenderPass(inputs) {
@@ -162,18 +174,24 @@ class WebGPU {
             label: "Light Prepass",
             colorAttachments: [
                 {
+                    view: this.lightPrePassBuffer.createView(),
                     clearValue: [0, 0, 0, 0],
                     loadOp: "clear",
                     storeOp: "store"
                 }  
-            ],
-
-            depthStencilAttachment: {
-                depthClearValue: 1.0,
-                depthLoadOp: 'clear',
-                depthStoreOp: 'store',
-            },
-        };        
+            ]
+        };  
+        
+        this.postProcessPass = {
+            label: "post Process",
+            colorAttachments: [
+                {
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: "clear",
+                    storeOp: "store"
+                }  
+            ]
+        };  
 
         this.sampler = this.device.createSampler({
             magFilter: inputs.textureFilter,
@@ -219,7 +237,7 @@ class WebGPU {
             ]
         });
 
-        var pipeline = this.device.createRenderPipeline({
+        let pipeline = this.device.createRenderPipeline({
             label: "lightPrePass",
             layout: this.device.createPipelineLayout({
                 bindGroupLayouts: [
@@ -237,16 +255,6 @@ class WebGPU {
                 entryPoint: "fs",
                 targets: [{format: this.canvasFormat}]
             },
-            primitive: {
-                topology: "triangle-list",
-                cullMode: "none",
-            },
-
-            depthStencil: {
-                depthWriteEnabled: true,
-                depthCompare: 'less',
-                format: 'depth24plus',
-            }
         });
 
         this.pipeline["lightPrePass"] = pipeline;
@@ -300,7 +308,7 @@ class WebGPU {
             ]
         });
 
-        var pipeline = this.device.createRenderPipeline({
+        let pipeline = this.device.createRenderPipeline({
             label: "gBufferWrite",
             layout: this.device.createPipelineLayout({
                 bindGroupLayouts: [
@@ -341,6 +349,38 @@ class WebGPU {
         this.pipeline["gBufferWrite"] = pipeline;
     }
 
+    async postProcessPipeline(shaderModule) {
+        this.postProcessBindGroupLayout = this.device.createBindGroupLayout({
+            entries: [
+                {
+                    binding: 0,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {sampleType: 'unfilterable-float'},
+                }
+            ]
+        });
+
+        let pipeline = this.device.createRenderPipeline({
+            label: "postProcess",
+            layout: this.device.createPipelineLayout({
+                bindGroupLayouts: [
+                    this.postProcessBindGroupLayout,
+                ],
+            }),
+            vertex: {
+                module: shaderModule.module, 
+                entryPoint: "vs",
+            },
+            fragment: {
+                module: shaderModule.module,
+                entryPoint: "fs",
+                targets: [{format: this.canvasFormat}]
+            }
+        });
+
+        this.pipeline["postProcess"] = pipeline;
+    }
+
     setUniformBuffer() {
         this.device.queue.writeBuffer(
             this.uniformBuffer, 
@@ -370,8 +410,7 @@ class WebGPU {
     render() {
         let canvasTexture = this.context.getCurrentTexture();
 
-        this.lightPrePass.colorAttachments[0].view = canvasTexture.createView();
-        this.lightPrePass.depthStencilAttachment.view = this.depthTexture.createView();
+        this.postProcessPass.colorAttachments[0].view = canvasTexture.createView();
         this.gBufferPass.depthStencilAttachment.view = this.depthTexture.createView();
 
         this.device.queue.writeBuffer(
@@ -404,6 +443,15 @@ class WebGPU {
         lightPrePass.setBindGroup(2, this.lightDataBindGroup);
         lightPrePass.draw(6);
         lightPrePass.end();
+
+
+        // Post Process
+        const postProcessPass = encoder.beginRenderPass(this.postProcessPass);
+        
+        postProcessPass.setPipeline(this.pipeline["postProcess"]);
+        postProcessPass.setBindGroup(0, this.postProcessBindGroup);
+        postProcessPass.draw(6);
+        postProcessPass.end();
 
         
         const commandBuffer = encoder.finish();
@@ -524,6 +572,7 @@ class WebGPU {
             ]
         });
 
+    
         this.lightDataBindGroup = this.device.createBindGroup({
             layout: this.lightDataBindGroupLayout,
             entries: [
@@ -532,6 +581,16 @@ class WebGPU {
                     resource: {buffer: this.lightBuffer},
                 }
             ]
-        });   
+        });
+
+        this.postProcessBindGroup = this.device.createBindGroup({
+            layout: this.postProcessBindGroupLayout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.lightPrePassBuffer.createView(),
+                }
+            ]
+        });
     }
 }

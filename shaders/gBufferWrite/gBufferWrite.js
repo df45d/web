@@ -2,8 +2,11 @@ class gBufferWrite {
     static normalMappingEnabled = `
     fn getNormal(vsOut: vsOutput, normalTex: vec3f) -> vec3<f32>{
         var normal = normalize(normalTex * 2 - vec3f(1, 1, 1));
+        normal.x = -normal.x;
+        normal.y = -normal.y;
         var TBN = mat3x3f(vsOut.tangent, vsOut.biTangent, vsOut.normal);
-        return normalize(TBN * normal);
+        normal = normalize(TBN * normal);
+        return normal;
     }
     `
 
@@ -50,13 +53,6 @@ class gBufferWrite {
             ],
             headerText
         );
-
-        module.targets = [
-            {format: "bgra8unorm"},
-            {format: "rgba16float"},
-            {format: "rgba16float"},
-            {format: "bgra8unorm"}
-        ];
         
         return module;
 

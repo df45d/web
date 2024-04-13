@@ -29,5 +29,5 @@
     let specular = pow(max(dot(halfDir, normal), 0), 32);
 
     var fragColor = (ambient + diffuse + specular) * albedo * lightColor;
-    return vec4f(fragColor, 0);
+    return vec4f(fragColor, 1);
 }

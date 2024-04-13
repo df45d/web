@@ -1,10 +1,10 @@
-class lightPrePass {
+class postProcess {
     static async get(inputs) {
         var headerText = "";
         const module = await ShaderModule.create(
-            inputs.device, "lightPrepass",
-            "shaders/lightPrePass/vert.wgsl",
-            "shaders/lightPrePass/frag.wgsl",
+            inputs.device, "postProcess",
+            "shaders/texturedQuad.vert.wgsl",
+            "shaders/postProcess/frag.wgsl",
             0,
             [],
             headerText
