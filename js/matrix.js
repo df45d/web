@@ -149,7 +149,7 @@ class mat4 {
         return new mat4(
             1 / aspect_ratio, 0, 0, 0,
             0, 1, 0, 0,
-            0, 0, 1 / (far - near), -near / (far - near),
+            0, 0, 1.0 / far, -near / far,
             0, 0, 1, 0
         );
     }

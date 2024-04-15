@@ -23,7 +23,7 @@ class WebGPU {
 
     async #loadArrayTexture() {
         let texture = this.device.createTexture({
-            size: [4096, 4096, 16],
+            size: [4096, 4096, 8],
             format: "rgba8unorm",
             usage: GPUTextureUsage.TEXTURE_BINDING |
             GPUTextureUsage.COPY_DST |
@@ -37,7 +37,6 @@ class WebGPU {
     async #loadTextureToArray(filePath, dst, index) {
         var response = await fetch(filePath);
         const imageBitmap = await createImageBitmap(await response.blob());
-        console.log(imageBitmap)
 
         this.device.queue.copyExternalImageToTexture(
             {source: imageBitmap},
@@ -97,7 +96,7 @@ class WebGPU {
 
         let obj = await ObjLoader.create("assets/models/gun.obj");
         await pipeline.loadModel(obj.vertices , obj.vertexNumber);
-        pipeline.setCameraMatrix(.1, 100);
+        pipeline.setCameraMatrix();
     }
 
     async fetchGPU() {
@@ -556,7 +555,7 @@ class WebGPU {
         let name = "gun2";
         this.texture = await this.#loadArrayTexture();
         await this.#loadTextureToArray(`assets/${name}/albedo.png`, this.texture, 0);
-        await this.#loadTextureToArray(`assets/rough/albedo.png`, this.texture, 1);
+        //await this.#loadTextureToArray(`assets/rough/albedo.png`, this.texture, 1);
 
 
         this.normalMap = await this.#loadTexture(`assets/${name}/normal.png`);
@@ -568,7 +567,7 @@ class WebGPU {
 
 
     setCameraMatrix(near, far) {
-        this.perspectiveMatrix = mat4.createPerspectiveMatrix(this.canvas.width / this.canvas.height, near, far);
+        this.perspectiveMatrix = mat4.createPerspectiveMatrix(this.canvas.width / this.canvas.height, 0.1, 64);
         this.translationMatrix = mat4.createTranslationMatrix(0, 0, 2);
         this.rotationMatrix;
         this.invRotationMatrix;

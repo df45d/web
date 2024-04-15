@@ -14,17 +14,19 @@ struct gBufferOut {
 
 
 @fragment fn fs(vsOut: vsOutput) -> gBufferOut {
-    let albedo = textureSample(tTexture, tSampler, vsOut.uv, 0).rgb;
-    let normalTex = textureSample(normalMap, tSampler, vsOut.uv).rgb;
-    let ao = textureSample(aoMap, tSampler, vsOut.uv).r;
-    let roughness = textureSample(roughnessMap, tSampler, vsOut.uv).r;
-    let metallic = textureSample(metallicMap, tSampler, vsOut.uv).r;
+    let coord = vec2f(vsOut.uv.x, vsOut.uv.y);
+
+    let albedo = textureSample(tTexture, tSampler, coord, 0).rgb;
+    let normalTex = textureSample(normalMap, tSampler, coord).rgb;
+    let ao = textureSample(aoMap, tSampler, coord).r;
+    let roughness = textureSample(roughnessMap, tSampler, coord).r;
+    let metallic = textureSample(metallicMap, tSampler, coord).r;
 
     let normal = getNormal(vsOut, normalTex);
 
     var output = gBufferOut();
     output.albedo = vec4f(albedo.rgb, 0);
-    output.position = vec4f(vsOut.position.xyz, 0);
+    output.position = vec4f(vsOut.position, 0);
     output.normal = vec4f(normal, 0); 
     output.properties.r = roughness;
     output.properties.g = metallic; 

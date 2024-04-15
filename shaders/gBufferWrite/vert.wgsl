@@ -39,6 +39,13 @@ struct vsOutput {
     vsOut.tangent = T;
     vsOut.biTangent = B;
 
-    vsOut.fragPos = fragPosition * matrices.projectionMatrix; 
+    
+
+    vsOut.fragPos = vec4f(fragPosition.xyz, 1) * matrices.projectionMatrix; 
+
+    // I am so confused why something won't work so I did this
+    if (fragPosition.z >= 64) {
+        vsOut.fragPos.z = 1000000000;
+    }
     return vsOut;
 }
