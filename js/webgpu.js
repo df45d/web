@@ -60,6 +60,12 @@ class WebGPU {
 
         await pipeline.postProcessPipeline(postProcessShader);
 
+        var antiAliasingShader = await antiAliasing.get({
+            device: pipeline.device,
+        });
+
+        await pipeline.antiAliasingPipeline(antiAliasingShader);
+
         let obj = await ObjLoader.create("assets/models/gun.obj");
         await pipeline.loadModel(obj.vertices , obj.vertexNumber);
         pipeline.setCameraMatrix(.1, 100);
@@ -131,6 +137,12 @@ class WebGPU {
             usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
             format: 'bgra8unorm',
         });
+
+        this.postProcessBuffer = device.createTexture({
+            size: [this.canvas.width, this.canvas.height],
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING,
+            format: 'bgra8unorm',
+        });
     }
 
     async loadRenderPass(inputs) {
@@ -186,12 +198,24 @@ class WebGPU {
             label: "post Process",
             colorAttachments: [
                 {
+                    view: this.postProcessBuffer.createView(),
                     clearValue: [0, 0, 0, 0],
                     loadOp: "clear",
                     storeOp: "store"
                 }  
             ]
         };  
+
+        this.antiAliasingPass = {
+            label: "AntiAliasing",
+            colorAttachments: [
+                {
+                    clearValue: [0, 0, 0, 0],
+                    loadOp: "clear",
+                    storeOp: "store"
+                }  
+            ]
+        }; 
 
         this.sampler = this.device.createSampler({
             magFilter: inputs.textureFilter,
@@ -374,11 +398,33 @@ class WebGPU {
             fragment: {
                 module: shaderModule.module,
                 entryPoint: "fs",
-                targets: [{format: this.canvasFormat}]
+                targets: [{format: "bgra8unorm"}]
             }
         });
 
         this.pipeline["postProcess"] = pipeline;
+    }
+
+    async antiAliasingPipeline(shaderModule) {
+        let pipeline = this.device.createRenderPipeline({
+            label: "antiAliasing",
+            layout: this.device.createPipelineLayout({
+                bindGroupLayouts: [
+                    this.postProcessBindGroupLayout,
+                ],
+            }),
+            vertex: {
+                module: shaderModule.module, 
+                entryPoint: "vs",
+            },
+            fragment: {
+                module: shaderModule.module,
+                entryPoint: "fs",
+                targets: [{format: this.canvasFormat}]
+            }
+        });
+
+        this.pipeline["antiAliasing"] = pipeline;
     }
 
     setUniformBuffer() {
@@ -410,7 +456,7 @@ class WebGPU {
     render() {
         let canvasTexture = this.context.getCurrentTexture();
 
-        this.postProcessPass.colorAttachments[0].view = canvasTexture.createView();
+        this.antiAliasingPass.colorAttachments[0].view = canvasTexture.createView();
         this.gBufferPass.depthStencilAttachment.view = this.depthTexture.createView();
 
         this.device.queue.writeBuffer(
@@ -444,7 +490,6 @@ class WebGPU {
         lightPrePass.draw(6);
         lightPrePass.end();
 
-
         // Post Process
         const postProcessPass = encoder.beginRenderPass(this.postProcessPass);
         
@@ -452,6 +497,13 @@ class WebGPU {
         postProcessPass.setBindGroup(0, this.postProcessBindGroup);
         postProcessPass.draw(6);
         postProcessPass.end();
+
+        // Anti Aliasing
+        const antiAliasingPass = encoder.beginRenderPass(this.antiAliasingPass);
+        antiAliasingPass.setPipeline(this.pipeline["antiAliasing"]);
+        antiAliasingPass.setBindGroup(0, this.antiAliasingBindGroup);
+        antiAliasingPass.draw(6);
+        antiAliasingPass.end();
 
         
         const commandBuffer = encoder.finish();
@@ -589,6 +641,16 @@ class WebGPU {
                 {
                     binding: 0,
                     resource: this.lightPrePassBuffer.createView(),
+                }
+            ]
+        });
+
+        this.antiAliasingBindGroup = this.device.createBindGroup({
+            layout: this.postProcessBindGroupLayout,
+            entries: [
+                {
+                    binding: 0,
+                    resource: this.postProcessBuffer.createView(),
                 }
             ]
         });

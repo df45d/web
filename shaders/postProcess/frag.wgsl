@@ -1,11 +1,5 @@
 @group(0) @binding(0) var prePass: texture_2d<f32>;
 
-const a = 2.51;
-const b = 0.03;
-const c = 2.43;
-const d = 0.59;
-const e = 0.14;
-
 const ACESInputMat = mat3x3(
     vec3f(0.59719, 0.35458, 0.04823),
     vec3f(0.07600, 0.90834, 0.01566),
@@ -26,6 +20,7 @@ fn RRTAndODTFit(v: vec3f) -> vec3f
 }
 
 // wgsl implementation of professional HILL ACES tonemapping
+
 fn hillACES(inputColor: vec3f) -> vec3f
 {
     var color = inputColor * ACESInputMat;
@@ -34,11 +29,19 @@ fn hillACES(inputColor: vec3f) -> vec3f
 
     color = color * ACESOutputMat;
 
-    //color = saturate(color);
     color = clamp(color, vec3f(0.0), vec3f(1.0));
 
     return color;
 }
+
+
+// wgsl implementation of professional Narkowicz ACES tonemapping
+
+const a = 2.51;
+const b = 0.03;
+const c = 2.43;
+const d = 0.59;
+const e = 0.14;
 
 fn narkowiczACES(x: vec3f) -> vec3f {
     return clamp((x * (a * x + b)) / (x * (c * x + d) + e), vec3f(0.0), vec3f(1.0));
