@@ -6,7 +6,7 @@ struct gBufferOut {
 }
 
 @group(1) @binding(0) var tSampler: sampler;
-@group(1) @binding(1) var tTexture: texture_2d<f32>;
+@group(1) @binding(1) var tTexture: texture_2d_array<f32>;
 @group(1) @binding(2) var normalMap: texture_2d<f32>;
 @group(1) @binding(3) var aoMap: texture_2d<f32>;
 @group(1) @binding(4) var roughnessMap: texture_2d<f32>;
@@ -14,7 +14,7 @@ struct gBufferOut {
 
 
 @fragment fn fs(vsOut: vsOutput) -> gBufferOut {
-    let albedo = textureSample(tTexture, tSampler, vsOut.uv).rgb;
+    let albedo = textureSample(tTexture, tSampler, vsOut.uv, 0).rgb;
     let normalTex = textureSample(normalMap, tSampler, vsOut.uv).rgb;
     let ao = textureSample(aoMap, tSampler, vsOut.uv).r;
     let roughness = textureSample(roughnessMap, tSampler, vsOut.uv).r;

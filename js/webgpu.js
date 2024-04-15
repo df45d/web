@@ -21,6 +21,35 @@ class WebGPU {
         return texture;
     }
 
+    async #loadArrayTexture() {
+        let texture = this.device.createTexture({
+            size: [4096, 4096, 16],
+            format: "rgba8unorm",
+            usage: GPUTextureUsage.TEXTURE_BINDING |
+            GPUTextureUsage.COPY_DST |
+            GPUTextureUsage.RENDER_ATTACHMENT
+        });
+
+
+        return texture;
+    }
+
+    async #loadTextureToArray(filePath, dst, index) {
+        var response = await fetch(filePath);
+        const imageBitmap = await createImageBitmap(await response.blob());
+        console.log(imageBitmap)
+
+        this.device.queue.copyExternalImageToTexture(
+            {source: imageBitmap},
+            {texture: dst, origin: [0, 0, index]},
+            [imageBitmap.width, imageBitmap.height],
+        );
+        // Please don't do this - Terrible Convensions 
+        for (let x; x < imageBitmap.width / 4096; x++) {
+
+        }
+    }
+
     constructor() {
         this.pipeline = {};
     }
@@ -307,7 +336,7 @@ class WebGPU {
                 {
                     binding: 1,
                     visibility: GPUShaderStage.FRAGMENT,
-                    texture: {},
+                    texture: { viewDimension: '2d-array' }
                 },
                 {
                     binding: 2,
@@ -525,19 +554,16 @@ class WebGPU {
         this.vertexBuffer.unmap();
 
         let name = "gun2";
-        try {
-            this.texture = await this.#loadTexture(`assets/${name}/albedo.png`);
-            this.normalMap = await this.#loadTexture(`assets/${name}/normal.png`);
-            this.ao = await this.#loadTexture(`assets/${name}/ao.png`);
-            this.metallicMap = await this.#loadTexture(`assets/${name}/metallic.png`);
-            this.roughnessMap = await this.#loadTexture(`assets/${name}/roughness.png`);
-        } catch(err) {
-            this.texture = await this.#loadTexture(`assets/${name}/albedo.jpg`);
-            this.normalMap = await this.#loadTexture(`assets/${name}/normal.jpg`);
-            this.ao = await this.#loadTexture(`assets/${name}/ao.jpg`);
-            this.metallicMap = await this.#loadTexture(`assets/${name}/metallic.jpg`);
-            this.roughnessMap = await this.#loadTexture(`assets/${name}/roughness.jpg`);
-        }
+        this.texture = await this.#loadArrayTexture();
+        await this.#loadTextureToArray(`assets/${name}/albedo.png`, this.texture, 0);
+        await this.#loadTextureToArray(`assets/rough/albedo.png`, this.texture, 1);
+
+
+        this.normalMap = await this.#loadTexture(`assets/${name}/normal.png`);
+        this.ao = await this.#loadTexture(`assets/${name}/ao.png`);
+        this.metallicMap = await this.#loadTexture(`assets/${name}/metallic.png`);
+        this.roughnessMap = await this.#loadTexture(`assets/${name}/roughness.png`);
+
     }
 
 
