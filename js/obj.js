@@ -1,5 +1,5 @@
 class ObjLoader {
-    static async create(filePath) {
+    static async create(filePath, vertexNormalOnly) {
         const objLoader = new ObjLoader;
 
         const file = await fetch(filePath);
@@ -75,9 +75,17 @@ class ObjLoader {
 
 
             for (let v = 0; v < 3; v++) {
-                vertices.push(
-                    ...vertex[v].array, ...normal[v].array, 
-                    ...uv[v].array, ...tangent.array);
+                if (vertexNormalOnly) {
+                    vertices.push(
+                        ...vertex[v].array, ...normal[v].array
+                    );
+                }
+                else {
+                    vertices.push(
+                        ...vertex[v].array, ...normal[v].array, 
+                        ...uv[v].array, ...tangent.array);
+                }
+                
             }
         }
 

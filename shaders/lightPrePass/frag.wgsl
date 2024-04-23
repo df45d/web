@@ -13,11 +13,12 @@
     let albedo = albedoLoad.rgb;
     let position = positionLoad.xyz;
     let normal = normalLoad.xyz;
+    let grass = normalLoad.w;
     let roughness = propertiesLoad.r;
     let metallic = propertiesLoad.g;
     let ao = propertiesLoad.b;
 
-    let ambient = 0.3 * ao;
+    let ambient = 0.5 * ao;
     let lightColor = lightData.color.xyz;
 
     let lightDir = -normalize(vsOut.viewSpaceLightDir);
@@ -29,5 +30,30 @@
     let specular = pow(max(dot(halfDir, normal), 0), 32);
 
     var fragColor = (ambient + diffuse + specular) * albedo * lightColor;
+
+    
+    /*// DEBUG VIEW
+    let dimensions = vec2i(textureDimensions(gBufferAlbedo));
+    if (screenPos.x == dimensions.x/2 || screenPos.y == dimensions.y/2) {
+        return vec4f(1, 1, 1, 1);
+    }
+
+    if (screenPos.x < dimensions.x/2 && screenPos.y < dimensions.y/2 ) {
+        return textureLoad(gBufferAlbedo, screenPos*2, 0);
+    }
+
+    if (screenPos.x > dimensions.x/2 && screenPos.y < dimensions.y/2 ) {
+        return textureLoad(gBufferPosition, screenPos*2 - vec2i(dimensions.x, 0), 0); 
+    }
+
+    if (screenPos.x < dimensions.x/2 && screenPos.y > dimensions.y/2 ) {
+        return textureLoad(gBufferNormal, screenPos*2 - vec2i(0, dimensions.y), 0); 
+    }
+
+    if (screenPos.x > dimensions.x/2 && screenPos.y > dimensions.y/2 ) {
+        return textureLoad(gBufferProperties, screenPos*2 - dimensions, 0); 
+    }
+
+    return vec4f(1, 0, 0, 1);*/
     return vec4f(fragColor, 1);
 }

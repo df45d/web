@@ -1,51 +1,73 @@
+const bladeWidth = 0.25 / 2;
+const bladeHeight = 1;
+const bladeVertices = 15;
+
+function shapeBlade(y) {
+    
+    return Math.sqrt((-y + bladeHeight) / 128);
+}
+
 function getGrassBlade() {
-    let bodyQuads = 2;
-    let vertNumber = (bodyQuads * 2) + 3;
-    let bladeLength = 1;
+    let verts = []
 
+    let rows = (bladeVertices - 1) / 2;
+    for (let row = 0; row < rows; row++) {
+        let y = (bladeHeight / rows) * row ;
+        let x;
 
-    let spacing = bladeLength / (bodyQuads + 1);
+        if (y > bladeHeight / 2) {
+            x = shapeBlade(y);
+        }
+        else {
+            x = bladeWidth / 2;
+        }
 
-    let upperWidth = 0.1;
-    let lowerWidth = 0.1;
-    let hLowerWidth = lowerWidth / 2;
-    let hUpperWidth = upperWidth / 2;
-
-    let bottom = [new vec3(hLowerWidth, 0, 0), new vec3(-hLowerWidth, 0, 0)];
-
-    let top = [
-        new vec3(hUpperWidth, bladeLength - spacing, 0), 
-        new vec3(-hUpperWidth, bladeLength - spacing, 0)
-    ];
-
-    let tip = new vec3(0, bladeLength, 0);
-
-    let step = (hLowerWidth - hUpperWidth) / (bodyQuads);
-
-    let vertexPairs = [];
-
-    for (let i = 0; i < (bodyQuads - 1); i++) {
-        let vert = [new vec3(-step*(i+1) + hLowerWidth, (spacing*(i+1)), 0), 
-            new vec3(-(-step*(i+1) + hLowerWidth), (spacing*(i+1)), 0)];
-        vertexPairs.push(vert);
+        verts.push(new vec3(x, y, 0), new vec3(-x, y, 0)); 
     }
 
-    let vertices = [];
-    vertices.push(...bottom)
+    verts.push(new vec3(0, bladeHeight, 0)); //, new vec3(0, bladeHeight, 0)); 
 
-    for (let i = 0; i < (bodyQuads - 1); i++) {
-        vertices.push(...vertexPairs[i])
+    let faceVertices = [];    
+    for (let vert = 0; vert < (bladeVertices - 2); vert++) {
+        let vertices = verts.slice(vert, vert + 3); 
+        vertices = vertices.sort((a, b) => a.z - b.z);
+        let p1 = vertices[1]; let p2 = vertices[2];
+        if (vertices[1].x > vertices[2].x) {
+            vertices[1] = p2; vertices[2] = p1;
+        }
+        faceVertices.push(...vertices[0].array, ...vertices[1].array, ...vertices[2].array);
     }
-    vertices.push(...top);
-    vertices.push(tip);
 
-    let faceVertices = [];
-    console.log(vertices, vertNumber)
-    for (let i = 0; i < (vertNumber-2); i+=1) {
-        let pVertices = [...vertices[i].array, 1, 0, 1, ...vertices[i+1].array, 1, 0, 1, ...vertices[i+2].array, 1, 0, 1];
-        faceVertices.push(...pVertices);
+
+    return {
+        vertexArray: new Float32Array(faceVertices), 
+        vertices: faceVertices.length/3 
+    };
+}
+
+
+function offset(magnitude) {
+    return (Math.random()-0.5) * 2 * magnitude;
+}
+
+
+function loadGrassData() {
+    let width = 128; let depth = 128; let density = 8; let off = 1;
+    let grassData = [];
+    for (let x = -width/2; x < width/2; x++) {
+        for (let z = -depth/2; z < depth/2; z++) {
+            grassData.push(
+                x / density + offset(off / density), 0, 
+                z / density + offset(off / density), 
+                offset(Math.PI), offset(0.5) + 1
+            );
+        }
     }
-    return [new Float32Array(faceVertices), (vertNumber-2) * 3 ];
+
+    return {
+        array: new Float32Array(grassData),
+        length: width * depth
+    }
 }
 
 

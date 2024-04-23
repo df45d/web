@@ -16,7 +16,7 @@ struct gBufferOut {
 @fragment fn fs(vsOut: vsOutput) -> gBufferOut {
     let coord = vec2f(vsOut.uv.x, vsOut.uv.y);
 
-    let albedo = textureSample(tTexture, tSampler, coord, 0).rgb;
+    let albedo = vec3f(1, 0, 1); // textureSample(tTexture, tSampler, coord, 0).rgb;
     let normalTex = textureSample(normalMap, tSampler, coord).rgb;
     let ao = textureSample(aoMap, tSampler, coord).r;
     let roughness = textureSample(roughnessMap, tSampler, coord).r;

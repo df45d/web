@@ -44,8 +44,8 @@ struct vsOutput {
     vsOut.fragPos = vec4f(fragPosition.xyz, 1) * matrices.projectionMatrix; 
 
     // I am so confused why something won't work so I did this
-    if (fragPosition.z >= 64) {
-        vsOut.fragPos.z = 1000000000;
-    }
+    /*if (fragPosition.z >= 32) {
+        vsOut.fragPos.z = fragPosition.z + 1;
+    }*/
     return vsOut;
 }
