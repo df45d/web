@@ -15,14 +15,21 @@ struct gBufferOut {
 
 @fragment fn fs(vsOut: vsOutput) -> gBufferOut {
     let coord = vec2f(vsOut.uv.x, vsOut.uv.y);
-
-    let albedo = vec3f(1, 0, 1); // textureSample(tTexture, tSampler, coord, 0).rgb;
+    
+    var albedo = textureSample(tTexture, tSampler, coord, 0).rgb; 
     let normalTex = textureSample(normalMap, tSampler, coord).rgb;
     let ao = textureSample(aoMap, tSampler, coord).r;
     let roughness = textureSample(roughnessMap, tSampler, coord).r;
     let metallic = textureSample(metallicMap, tSampler, coord).r;
 
-    let normal = getNormal(vsOut, normalTex);
+    var normal = getNormal(vsOut, normalTex);
+
+    if (vsOut.tangent.x > 10) {
+        albedo = vec3f(0.57, 0.58, 0.21) / 10; 
+        normal = vsOut.normal;
+    } else {
+        albedo /= 3;
+    }
 
     var output = gBufferOut();
     output.albedo = vec4f(albedo.rgb, 0);

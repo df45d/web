@@ -23,7 +23,7 @@
 
         async #loadArrayTexture() {
             let texture = this.device.createTexture({
-                size: [512, 512, 2],
+                size: [2048, 2048, 2],
                 format: "rgba8unorm",
                 usage: GPUTextureUsage.TEXTURE_BINDING |
                 GPUTextureUsage.COPY_DST |
@@ -53,12 +53,16 @@
             return new WebGPU();
         }
 
-        static async initGPU(pipeline) {
+        static async initGPU(pipeline, inputs) {
+            this.fxaa = inputs.fxaa;
+            this.grass = inputs.grass;
+
+
             await pipeline.fetchGPU();
 
-            let res = new vec2(3200, 2000);        
+      
             await pipeline.initCanvas({
-                resolution: res,
+                resolution: inputs.res,
             });
 
             let gBufferWriteShader = await gBufferWrite.get({
@@ -102,10 +106,10 @@
 
             await pipeline.antiAliasingPipeline(antiAliasingShader);
 
-            var obj = await ObjLoader.create("assets/models/plane.obj");
+            var obj = await ObjLoader.create("assets/models/sword.obj");
             await pipeline.loadModel(obj.vertices , obj.vertexNumber);
 
-            let grass = getGrassBlade();
+            let grass = getGrassBlade(inputs.grass);
             await pipeline.loadGrassModel(grass.vertexArray, grass.vertices);
 
             obj = await ObjLoader.create("assets/models/skybox.obj", true);
@@ -224,6 +228,7 @@
                     depthStoreOp: 'store',
                 },
             };
+
             this.grassPass = {
                 label: "Grass",
                 colorAttachments: [
@@ -461,6 +466,7 @@
         }
 
         async grassPipeline(shaderModule) {
+            this.noise = await this.#loadTexture(`assets/noise.png`);
             this.grassBindGroupLayout = this.device.createBindGroupLayout({
                 entries: [
                     {
@@ -469,7 +475,24 @@
                         buffer: {
                             type: 'read-only-storage',
                         }
-                    }
+                    },
+                    {
+                        binding: 1,
+                        visibility: GPUShaderStage.VERTEX,
+                        sampler: {},
+                    },
+                    {
+                        binding: 2,
+                        visibility: GPUShaderStage.VERTEX,
+                        texture: {}
+                    },
+                    {
+                        binding: 3,
+                        visibility: GPUShaderStage.VERTEX,
+                        buffer: {
+                            type: 'uniform',
+                        }
+                    },
                 ]
             });
             let pipeline = this.device.createRenderPipeline({
@@ -550,6 +573,7 @@
         }
 
         async postProcessPipeline(shaderModule) {
+            this.timeStamp = Date.now();
             this.postProcessBindGroupLayout = this.device.createBindGroupLayout({
                 entries: [
                     {
@@ -630,6 +654,8 @@
         }
 
         render() {
+            this.deltaTime = (Date.now() - this.prevTime);
+            this.prevTime = Date.now();  
             let canvasTexture = this.context.getCurrentTexture();
 
             this.antiAliasingPass.colorAttachments[0].view = canvasTexture.createView();
@@ -641,6 +667,11 @@
                 this.lightBuffer, 
                 0,
                 new Float32Array([0, -1, 0, 1, 1, 1, 1, 1]).buffer
+            );
+            this.device.queue.writeBuffer(
+                this.delta, 
+                0,
+                new Float32Array([(Date.now()-this.timeStamp)/1000]).buffer
             );
 
             this.setUniformBuffer(); 
@@ -684,13 +715,14 @@
             skyboxPass.draw(36);
             skyboxPass.end();
 
-            // Post Process
+
             const postProcessPass = encoder.beginRenderPass(this.postProcessPass);
             
             postProcessPass.setPipeline(this.pipeline["postProcess"]);
             postProcessPass.setBindGroup(0, this.postProcessBindGroup);
             postProcessPass.draw(6);
             postProcessPass.end();
+        
 
             // Anti Aliasing
             const antiAliasingPass = encoder.beginRenderPass(this.antiAliasingPass);
@@ -705,8 +737,7 @@
             const commandBuffer = encoder.finish();
             this.device.queue.submit([commandBuffer]);
 
-            this.deltaTime = (Date.now() - this.prevTime);
-            this.prevTime = Date.now();         
+                   
         }
 
         async loadModel(vertexArray, vertices) {
@@ -720,9 +751,9 @@
             new Float32Array(this.vertexBuffer.getMappedRange()).set(vertexArray);
             this.vertexBuffer.unmap();
 
-            let name = "rough";
+            let name = "sword";
             this.texture = await this.#loadArrayTexture();
-            await this.#loadTextureToArray(`assets/${name}/albedo.png`, this.texture, 0);
+            await this.#loadTextureToArray(`assets/${name}/albedo.jpeg`, this.texture, 0);
             //await this.#loadTextureToArray(`assets/rough/albedo.png`, this.texture, 1);
 
 
@@ -730,7 +761,7 @@
             this.ao = await this.#loadTexture(`assets/${name}/ao.png`);
             this.metallicMap = await this.#loadTexture(`assets/${name}/metallic.png`);
             this.roughnessMap = await this.#loadTexture(`assets/${name}/roughness.png`);
-
+            
         }
 
         async loadSkyBoxModel(vertexArray, vertices) {
@@ -769,6 +800,11 @@
             });
 
             this.lightBuffer = this.device.createBuffer({
+                size: 48,
+                usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST 
+            });
+
+            this.delta = this.device.createBuffer({
                 size: 48,
                 usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST 
             });
@@ -883,13 +919,26 @@
                     }
                 ]
             });
-
+            
+            
             this.grassBindGroup = this.device.createBindGroup({
                 layout: this.grassBindGroupLayout,
                 entries: [
                     {
                         binding: 0,
                         resource: {buffer: this.grassBuffer},
+                    },
+                    {
+                        binding: 1,
+                        resource: this.sampler,
+                    },
+                    {
+                        binding: 2,
+                        resource: this.noise.createView(),
+                    },
+                    {
+                        binding: 3,
+                        resource: {buffer: this.delta},
                     }
                 ]
             });

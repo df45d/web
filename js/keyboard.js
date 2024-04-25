@@ -50,6 +50,7 @@ keys = {
     'Shift': false,
     'Tab': false,
     'Escape': false,
+    ' ': false,
 }
 
 

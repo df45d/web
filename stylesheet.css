@@ -1,100 +1,212 @@
 canvas {
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    border: 3px solid black; /* Optional: Add border for visibility */
-    height: 99%;
-    width: 99%;
-    margin: 0px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+  height: 100%;
+  width: 100%;
+  z-index: 1;
 }
 
+html, body {
+  margin: 0 !important;
+  padding: 0 !important;
+}
 
+@font-face {
+  font-family: 'FutureBuglerUpright';
+  src: url("assets/FutureBuglerUpright-Bold.otf") format("opentype");
+}
 
-.text-block {
-    position: absolute;
-    display: block;
-    top: 50%;
-    left: 50%;
-    background-color: lightslategrey;   
-    color: black;
-    padding: 20px;
-    padding-top: 0px;
-    width: 60%;
-    height: 60%;
-    border: 10px solid black;
-    transform: translate(-50%, -50%)
+table, tr, td{
+  border-collapse: collapse;
+  font-family: DIN Next LT Arabic Bold;
+  background-color: rgba(0, 0, 0, 0.1);
+  margin-right: 30;
+  text-shadow: 2px 2px black; 
+}
 
+table {
+  width: 60%;
+  border: 2px white solid;
+  border-left: 0px;
+}
+
+.bottom-right {
+  position: absolute;
+  font-family: DIN Next LT Arabic Bold;
+  color: white;
+  text-shadow: 2px 2px black; 
+  bottom: 0;
+  right: 20px;
 }
 
 .top-left {
-    position: absolute;
-    top: 16px;
-    left: 18px;
-
-}
-::-webkit-scrollbar {
-    width: 10px;
-}
-
-/* Track */
-::-webkit-scrollbar-track {
-background: #f1f1f1; 
+  position: absolute;
+  font-family: 'FutureBuglerUpright', serif;
+  color: rgb(0, 144, 233);
+  top: -20px;
+  left: 5px;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: black;
 }
 
-/* Handle */
-::-webkit-scrollbar-thumb {
-background: #888; 
+.top-left2 {
+  position: absolute;
+  font-family: 'FutureBuglerUpright', serif;
+  color: rgb(0, 144, 233);
+  top: -20px;
+  left: 170px;
+  -webkit-text-stroke-width: 1px;
+  -webkit-text-stroke-color: black;
 }
 
-/* Handle on hover */
-::-webkit-scrollbar-thumb:hover {
-background: #555; 
+.top-left-toggle {
+  position: absolute;
+  font-family: DIN Next LT Arabic Bold;
+  color: white;
+  text-shadow: 2px 2px black; 
+  top: 70px;
+  left: 5px;
 }
 
-.custom-select {
-    min-width: 350px;
-    position: relative;
-  }
-  
-  select {
-    appearance: none;
-    /*  safari  */
-    -webkit-appearance: none;
-    /*  other styles for aesthetics */
-    width: 70%;
-    font-size: 1.15rem;
-    padding: 0.675em 6em 0.675em 1em;
-    background-color: #fff;
-    border: 1px solid #caced1;
-    border-radius: 0.25rem;
-    color: #000;
-    cursor: pointer;
-  }
-  
-  .custom-select::before,
-  .custom-select::after {
-    --size: 0.3rem;
-    content: "";
-    position: absolute;
-    right: 1rem;
-    pointer-events: none;
-  }
-  
-  .custom-select::before {
-    border-left: var(--size) solid transparent;
-    border-right: var(--size) solid transparent;
-    border-bottom: var(--size) solid black;
-    top: 40%;
-  }
-  
-  .custom-select::after {
-    border-left: var(--size) solid transparent;
-    border-right: var(--size) solid transparent;
-    border-top: var(--size) solid black;
-    top: 55%;
-  }
-  
-  
+.title {
+  font-family: DIN Next LT Arabic Bold;  
+  color: white;
+  text-shadow: 2px 2px black;
+  padding: 20px;
+  padding-top: 1px;    
+  padding-bottom: 10px;
+}
+
+.game_title {
+  font-family: DIN Next LT Arabic Bold;  
+  color: black;
+  text-shadow: 2px 2px black;
+  font-size: x-large;
+  padding: 20px;
+  padding-top: 1px;    
+  padding-bottom: 10px;
+  position: absolute;
+  top: 100;
+  left: 10%;
+  margin: auto;
+  width: 70%;
+  height: 70%;
+  margin-top: 7%;
+}
+
+.sub_title {
+  font-family: DIN Next LT Arabic Bold;  
+  color: white;
+  text-shadow: 2px 2px black;
+  font-size: medium;
+  padding: 20px;
+  padding-top: 1px;    
+  padding-bottom: 10px;
+  position: absolute;
+  top: 50;
+  left: 5%;
+  margin: auto;
+  width: 70%;
+  height: 70%;
+  margin-top: 7%;
+}
+
+
+.row {
+  transition: 0.3s;
+}
+
+.row:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-5px);
+}
+
+.l-change {
+  transition: 0.3s;
+}
+
+.l-change:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: scale(0.8);
+}
+
+.l-change:active {
+  opacity: 0.5;
+  transform: scale(0.8);
+}
+
+.r-change {
+  transition: 0.3s;
+}
+
+
+.r-change:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  transform: scale(0.8);
+}
+
+.r-change:active {
+  opacity: 0.5;
+  transform: scale(0.8);
+
+}
+.blurb {
+  font-family: DIN Next LT Arabic Bold;
+  color: white;
+  padding-top: 20px;
+  padding-right: 30px;
+  text-shadow: 2px 2px black; 
+}
+
+
+.option-name{
+  color: rgb(220, 220, 220);
+}
+
+.option-result{
+  color: white;
+}
+
+.menu {
+  position: absolute;
+  top: 0;
+  left: 15%;
+  margin: auto;
+  width: 70%;
+  height: 70%;
+  margin-top: 7%;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.7));
+  border: 4px white solid;
+  border-radius: 10px;
+  z-index: 2;
+}
+
+
+body {
+  user-select: none;
+}
+
+.arrow {
+  border: solid white;
+  border-width: 0 3px 3px 0;
+  display: inline-block;
+  padding: 2px;
+}
+
+.right {
+  transform: rotate(-45deg);
+  -webkit-transform: rotate(-45deg);
+}
+
+.left {
+  transform: rotate(135deg);
+  -webkit-transform: rotate(135deg);
+}
+
+.up {
+  transform: rotate(-135deg);
+  -webkit-transform: rotate(-135deg);
+}
+
+.down {
+  transform: rotate(45deg);
+  -webkit-transform: rotate(45deg);
+}

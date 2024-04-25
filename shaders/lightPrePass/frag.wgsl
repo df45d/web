@@ -17,19 +17,19 @@
     let roughness = propertiesLoad.r;
     let metallic = propertiesLoad.g;
     let ao = propertiesLoad.b;
-
-    let ambient = 0.5 * ao;
     let lightColor = lightData.color.xyz;
 
+    let ambient = 0.5 * albedo * lightColor;
+
     let lightDir = -normalize(vsOut.viewSpaceLightDir);
-    let diffuse = max(dot(normal, lightDir), 0);
+    let diffuse = max(dot(normal, lightDir), 0) * albedo * lightColor;
 
     var viewDir = normalize(-position);
     let halfDir = normalize(lightDir + viewDir);
 
-    let specular = pow(max(dot(halfDir, normal), 0), 32);
+    let specular = pow(max(dot(halfDir, normal), 0), 512) * lightColor;
 
-    var fragColor = (ambient + diffuse + specular) * albedo * lightColor;
+    var fragColor = ambient + diffuse; // + specular;
 
     
     /*// DEBUG VIEW

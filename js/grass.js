@@ -1,13 +1,14 @@
-const bladeWidth = 0.25 / 2;
-const bladeHeight = 1;
-const bladeVertices = 15;
+const bladeSize = 2;
 
-function shapeBlade(y) {
-    
-    return Math.sqrt((-y + bladeHeight) / 128);
+const bladeWidth = 0.25 / (2 ** (bladeSize + 1));
+const bladeHeight = 1;
+
+
+function shapeBlade(y) {  
+    return Math.sqrt((-y + bladeHeight) / (128 * (4 ** bladeSize)));
 }
 
-function getGrassBlade() {
+function getGrassBlade(bladeVertices) {
     let verts = []
 
     let rows = (bladeVertices - 1) / 2;
@@ -52,13 +53,13 @@ function offset(magnitude) {
 
 
 function loadGrassData() {
-    let width = 128; let depth = 128; let density = 8; let off = 1;
+    let width = 1024; let depth = 1400; let density = 12; let off = 1;
     let grassData = [];
     for (let x = -width/2; x < width/2; x++) {
         for (let z = -depth/2; z < depth/2; z++) {
             grassData.push(
                 x / density + offset(off / density), 0, 
-                z / density + offset(off / density), 
+                z / density + offset(off / density),    
                 offset(Math.PI), offset(0.5) + 1
             );
         }

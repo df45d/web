@@ -1,15 +1,22 @@
 class gameEngine {
     async init() {
-        this.fpsCounter = document.getElementById("fps");
+        this.fpsCounter = document.getElementById("FPS");
+        this.fpsList = Array(100);
+
         this.menu = document.getElementById("menu");
-        this.normalMapping = document.getElementById("normalMapping");
+        this.title = document.getElementById("TITLE");
+
+        this.normalMapping = document.getElementById("NORMAL MAPPING");
         this.normalMapping.onchange = () => this.menuChange("normalMapping");
 
-        this.resolution = document.getElementById("resolution");
+        this.resolution = document.getElementById("DISPLAY RESOLUTION");
         this.resolution.onchange = () => this.menuChange("resolution");
 
-        this.textureFilter = document.getElementById("textureFilter");
-        this.textureFilter.onchange = () => this.menuChange("textureFilter");
+        this.hdr = document.getElementById("HDR");
+        this.hdr.onchange = () => this.menuChange("HDR");
+
+        this.aliasing = document.getElementById("ANTI-ALIASING");
+        this.aliasing.onchange = () => this.menuChange("aliasing");
 
         this.stop = false;
         this.change = undefined;
@@ -19,9 +26,12 @@ class gameEngine {
         
         this.xDir = 0;
         this.yDir = 0;
-        this.pos = new vec3(0, 0, -4);
+        this.pos = new vec3(0, 0, -42);
 
-        await this.initGPU();
+        this.screen = "intro";
+        this.movement =new vec3(0, 1, -10);
+
+        await this.initDisplay();
         this.gameLoop();
     }
 
@@ -47,15 +57,37 @@ class gameEngine {
             res.x = 640;
             res.y = 360;
         }
+        if (!res.x) {
+            res.x = window.outerWidth;;
+            res.y = window.innerHeight;
+        }
 
-        await this.gpu.initCanvas({
-            resolution: res,
+
+        let grass = this.hdr.value;
+        if (!grass) {
+            grass = 7
+        }
+        grass = parseFloat(grass);
+
+        let fxaaO = this.aliasing.value;
+        if (!this.aliasing) {
+            fxaaO = "fxaa"
+        }
+
+        await this.initGPU({
+            res,
+            fxaa: fxaaO,
+            grass: grass,
         });
+
+        /*await this.gpu.loadRenderPass({
+            textureFilter: "linear",
+        });*/
     }
 
-    async initGPU() {
+    async initGPU(inputs) {
         this.gpu = WebGPU.create();
-        await WebGPU.initGPU(this.gpu);
+        await WebGPU.initGPU(this.gpu, inputs);
     }
 
     menuChange (change) {
@@ -64,82 +96,76 @@ class gameEngine {
     }
 
     async handleSettingChange () {
-       /* if (this.change == "normalMapping") {
-            var floorShader = await defaultShader.get({
-                normalMapping: this.normalMapping.value === 'true',
-                device: this.gpu.device,
-            });
-            await this.gpu.createPipeline("Floor Pipeline", floorShader);
-        } else if (this.change == "resolution") {
-            this.initDisplay();
-        } else if (this.change == "textureFilter") {
-            await this.gpu.loadRenderPass({
-                textureFilter: this.textureFilter.value
-            });
-        }
+        console.log(this.change)
+        if (this.change == "resolution" || this.change == "HDR")
+        {
+            await this.initDisplay();
+        } 
+
         this.change = undefined;
-        this.stop = false;*/
+        this.stop = false;
         engine.gameLoop();
     }
 
+    rotate(vector, rotation) {
+        let sinVal = Math.sin(rotation);
+        let cosVal = Math.cos(rotation);
+        return new vec3(vector.x * cosVal + vector.z * sinVal, vector.y, -vector.x * sinVal + vector.z * cosVal);
+    }
+
     gameLoop() {
-        this.fpsCounter.textContent = "FPS: " + String(Math.round(1000 / this.gpu.deltaTime));
+        this.fpsList.splice(0, 0, Math.round(1000 / this.gpu.deltaTime)); 
+        this.fpsList.splice(this.fpsList.length-1, 1); 
+        let average = Math.round(this.fpsList.reduce((a, b) => a + b, 0) / this.fpsList.length);
 
-        if (this.keyboard.keyPressed["Escape"] && !this.escapePressed) {
-            this.escapePressed = true;  
-            let display = this.menu.style.display;
-
-            if (display == "none") {
-                this.menu.style.display = "block";
-            } else {
-                this.menu.style.display = "none";
-            }
-        } 
-        else if (!this.keyboard.keyPressed["Escape"]){
-            this.escapePressed = false; 
-        };
+        this.fpsCounter.textContent = "FPS: " + String(average);        
         
-        // rotation
-        if (this.keyboard.keyPressed["ArrowUp"]) {
-            this.xDir += this.gpu.deltaTime / 15;
-        };
-        if (this.keyboard.keyPressed["ArrowDown"]) {
-            this.xDir -= this.gpu.deltaTime / 15;
-        };
-        if (this.keyboard.keyPressed["ArrowLeft"]) {
-            this.yDir -= this.gpu.deltaTime / 15;
-        };
-        if (this.keyboard.keyPressed["ArrowRight"]) {
-            this.yDir += this.gpu.deltaTime / 15;
-        };
+        if (this.title.value == "game") {
+            // movement
 
-        // movement
-        let movement = new vec3(0, 0, 0);
+            if (this.keyboard.keyPressed["a"]) {
+                this.movement.x += this.gpu.deltaTime / 1500;
+            }
+            else if (this.keyboard.keyPressed["d"]) {
+                this.movement.x -= this.gpu.deltaTime / 1500;
+            }
+            else if (!this.keyboard.keyPressed["l"]){
+                this.movement.x += this.gpu.deltaTime / 5000;
+            }
+            if (this.keyboard.keyPressed[" "]) {
+                this.movement.y += this.gpu.deltaTime / 100;
+            } else if (this.movement.y > 1) {
+                this.movement.y -= this.gpu.deltaTime / 1000;
+            }
+            if (this.keyboard.keyPressed["w"]) {
+                if (this.movement.z < -1) {
+                    this.movement.z += this.gpu.deltaTime / 500;
+                }
+            } else if (this.keyboard.keyPressed["s"]) {
+                this.movement.z -= this.gpu.deltaTime / 500;
+            }
+            if (!this.gpu.deltaTime) {
+                this.movement = new vec3(0, 1, -10);
+            }
 
-        if (this.keyboard.keyPressed["w"]) {
-            movement.z += this.gpu.deltaTime / 150;
-        };
-        if (this.keyboard.keyPressed["s"]) {
-            movement.z -= this.gpu.deltaTime / 150;
-        };
-        if (this.keyboard.keyPressed["d"]) {
-            movement.x += this.gpu.deltaTime / 150;
-        };
-        if (this.keyboard.keyPressed["a"]) {
-            movement.x -= this.gpu.deltaTime / 150;
-        };
-        if (this.keyboard.keyPressed["r"]) {
-            this.pos.y += this.gpu.deltaTime / 150;
+            let pivot = new vec3(0, this.movement.y, -this.movement.z);
+
+            this.pos = this.rotate(pivot, (this.movement.x) % (Math.PI * 2)).add(new vec3(0, 0, -38));
+            
+            this.lookAt(new vec3(0, 1, -38));
+            this.setCamPos(...this.pos.array);
+            
+
+        } else {
+            this.rotateCam(this.xDir, this.yDir, 0);
+            this.setCamPos(...this.pos.array);
+            if (this.pos.y < 1) {
+                if (this.gpu.deltaTime) {
+                    this.pos.y += this.gpu.deltaTime * 0.001;
+                    this.pos.y = Math.min(this.pos.y, 1);
+                } 
+            }
         }
-        if (this.keyboard.keyPressed["f"]) {
-            this.pos.y -= this.gpu.deltaTime / 150;
-        };
-
-        movement.rotateY(this.yDir);
-        this.pos = this.pos.add(movement);
-        this.setCamPos(...this.pos.array);
-
-        this.rotateCam(this.xDir, this.yDir, 0);
         
         this.gpu.render();    
         if (!this.stop) {

@@ -11,7 +11,7 @@
 
     var color: vec3f;
 
-    let lightDir = normalize(vec3f(0, -1, 0));
+    let lightDir = normalize(vec3f(0, -0.5, -1));
     let sunIntensity = pow(max(dot(normal, lightDir), 0), 128);
     let sun = vec3f(sunIntensity, sunIntensity * 0.8, sunIntensity * 0.5);
 

@@ -39,7 +39,9 @@ struct vsOutput {
     vsOut.tangent = T;
     vsOut.biTangent = B;
 
-    
+    if (position.y == 0) {
+        vsOut.tangent = vec3f(100, 0, 0);
+    }
 
     vsOut.fragPos = vec4f(fragPosition.xyz, 1) * matrices.projectionMatrix; 
 

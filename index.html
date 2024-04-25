@@ -1,52 +1,107 @@
 <html>
-    <link rel="stylesheet" href="stylesheet.css">
-    <canvas id="canvas" width="1920" height="1080"></canvas>
+    <canvas id="canvas" width="200" height="200"></canvas>
     <!-- Body -->
-    <b><div id="fps" class="top-left" style="font-family: sans-serif; color: white;"></div></b>
 
-    <div id="menu" class="text-block" style="font-family: sans-serif; color: white; overflow-y: scroll; display: none;">
-        <p style="text-align: center;"><b>Settings</b></p>
-        <p>Display Resolution: &nbsp
-            <span class="custom-select" >
-                <select id="resolution">
-                  <option value="1">default</option>
-                  <option value="2">pristine</option>
-                  <option value="1080">1920 x 1080</option>
-                  <option value="720">1280 x 720</option>
-                  <option value="480">854 x 480</option>
-                  <option value="360">640 x 360</option>
-                </select>
-            </span>
-            </p>
-        
+	<link href="https://db.onlinewebfonts.com/c/513071b47bdba774c93a73ad16a75e3b?family=DIN+Next+LT+Arabic+Bold" rel="stylesheet">
+	<link href="stylesheet.css" rel="stylesheet">
+	<div id="TITLE" class="game_title" style="display: block;">
+		<h1>GRASS OF TSUSHIMA</h1>
+		<h1 class="sub_title">PRESS &nbsp;<b style="color: orangered; ">[C]</b>&nbsp; TO CONTINUE</h1>
+	</div>
 
-        <p>Normal Mapping: &nbsp
-        <span class="custom-select" >
-            <select id="normalMapping">
-              <option value="true">on</option>
-              <option value="false">off</option>
-            </select>
-        </span>
-        </p>
+	<div id="CONTROLS" class="game_title" style="display: none;">
+		<h1>CONTROLS</h1>
+		<h1 class="sub_title">PRESS &nbsp;<b style="color: orangered; ">[W]</b>&nbsp; AND &nbsp;<b style="color: orangered; ">[S]</b>&nbsp; TO ZOOM</h1>
+		<h1 class="sub_title"><br>PRESS &nbsp;<b style="color: orangered; ">[A]</b>&nbsp; AND &nbsp;<b style="color: orangered; ">[D]</b>&nbsp; TO ROTATE</h1>
+		<h1 class="sub_title"><br><br>PRESS &nbsp;<b style="color: orangered; ">[SPACE]</b>&nbsp; TO GO UP</h1>
+		<h1 class="sub_title"><br><br><br><br>HOLD &nbsp;<b style="color: orangered; ">[L]</b>&nbsp; TO LOOK VIEW</h1>
+		<h1 class="sub_title"><br><br><br>PRESS &nbsp;<b style="color: orangered; ">[ESC]</b>&nbsp; TO OPEN SETTINGS</h1>
+		<h1 class="sub_title"><br><br><br><br><br><br>PRESS &nbsp;<b style="color: green; ">[P]</b>&nbsp; TO CONTINUE</h1>
+	</div>
+	
 
-        <p>Texture Filtering: &nbsp
-            <span class="custom-select" >
-                <select id="textureFilter">
-                  <option value="linear">bilinear</option>
-                  <option value="nearest">off</option>
-                </select>
-            </span>
-            </p>
+	<div class="menu" id="SETTINGS" style="display: none;">
+	<h1 class="title">GRAPHICS SETTINGS</h1>
+	<table align="left" class="table-special">
+		<tr>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+		</tr>
+		<tr>
+			<td onmouseover="presetHover()" class="option-name row" style="width: 30%; padding-left: 30;">PRESET</td>
+			<td class="option-result l-change" style="width: 4%; text-align: center;"><i class="left arrow"></i></td>
+			<td id="PRESET" class="option-result" style="text-align: center;">Result</td>
+			<td class="option-result r-change" style="width: 4%; text-align: center; "><i class="right arrow"></i></td>
+		</tr>
+		<tr>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+		</tr>
 
-          <p>Anti Aliasing: &nbsp
-          <span class="custom-select" >
-              <select id="textureFilter">
-                <option value="off">off</option>
-                <option value="MSAA">MSAA</option>
-              </select>
-          </span>
-          </p>
-    </div>
+		<tr>
+			<td onmouseover="resolutionHover()" class="option-name row" style="width: 30%; padding-left: 30;">DISPLAY RESOLUTION</td>
+			<td class="option-result l-change" style="text-align: center;" onclick="resolutionChange(true)"><i class="left arrow"></i></td>
+			<td id="DISPLAY RESOLUTION" class="option-result" style="text-align: center;">Result</td>
+			<td class="option-result r-change" style="text-align: center;" onclick="resolutionChange()"><i class="right arrow"></i></td>
+		</tr>
+
+		<tr>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+		</tr>
+
+		<tr>
+			<td onmouseover="normalMappingHover()" class="option-name row" style="width: 30%; padding-left: 30;">NORMAL MAPPING</td>
+			<td class="option-result l-change" style="text-align: center;" onclick="normalMappingChange(true)"><i class="left arrow"></i></td>
+			<td id="NORMAL MAPPING" class="option-result" style="text-align: center;">Result</td>
+			<td class="option-result r-change" style=" text-align: center;" onclick="normalMappingChange()"><i class="right arrow"></i></td>
+		</tr>
+
+		<tr>
+			<td onmouseover="aliasingHover()" class="option-name row" style="width: 30%; padding-left: 30;">ANTI-ALIASING</td>
+			<td class="option-result l-change" style="text-align: center;" onclick="aliasingChange(true)"><i class="left arrow"></i></td>
+			<td id="ANTI-ALIASING" class="option-result" style="text-align: center;">Result</td>
+			<td class="option-result r-change" style="text-align: center;" onclick="aliasingChange()"><i class="right arrow"></i></td>
+		</tr>
+
+		<tr>
+			<td onmouseover="hdrHover()" class="option-name row" style="width: 30%; padding-left: 30;">GRASS QUALITY</td>
+			<td class="option-result l-change" style="text-align: center;" onclick="hdrChange(true)"><i class="left arrow" ></i></td>
+			<td id="HDR" class="option-result" style="text-align: center;">Result</td>
+			<td class="option-result r-change" style="text-align: center;" onclick="hdrChange()"><i class="right arrow"></i></td>
+		</tr>
+
+
+		<tr>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+			<td>&nbsp</td>
+		</tr>
+	</table>
+
+	<p class="blurb"></p>
+	<p class="bottom-right"><b style="color: orangered; ">[ESC]</b>&nbsp; CLOSE</p>
+	</div>
+
+	<div id="OVERLAY">
+	<h1 class="top-left" style="color:green">GPU</h1>
+	<h1 class="top-left2" style="color: white;" id="GPU">GPU NOT DETECTED</h1>
+
+	<h1 class="top-left"><br>Framerate</h1>
+	<h1 class="top-left2">
+		<br><b style="color: white;" id="FPS">60</b>
+		<sup style="color: white; font-size: 15px;"> FPS</sup>
+	</h1>
+
+	<p class="top-left-toggle"><b style="color: rgb(247, 255, 5); ">[O]</b>&nbsp; TOGGLE OVERLAY</p>
+	</div>
 
 
 
@@ -55,7 +110,6 @@
     <script src="js/matrix.js"></script>
     <script src="js/grass.js"></script>
     <script src="js/obj.js"></script>
-    <script src="js/object.js"></script>
     <script src="js/keyboard.js"></script>
 
     <script src="js/shaderModule.js"></script>
@@ -68,5 +122,209 @@
 
     <script src="js/webgpu.js"></script>
     <script src="js/gameEngine.js"></script>
-    <script src="js/main.js"></script>
+
+	<!-- Manage all the options in the settings menu -->
+	<script>
+		function extractValue(reg, str) {
+			const matches = str.match(reg);
+			return matches && matches[0];
+		}
+		
+		function getActiveGPU() {
+			let canvas = document.createElement('canvas');
+			let gl = canvas.getContext('webgl');
+			let debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+
+			let vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+			let renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+
+			let card = extractValue(/((NVIDIA|AMD|Intel)[^\d]*[^\s]+)/, renderer);
+
+			let tokens = card.split(' ');
+			tokens.shift();
+
+			let manufacturer = extractValue(/(NVIDIA|AMD|Intel)/g, card);
+			let cardVersion = tokens.pop();
+			let brand = tokens.join(' ');
+
+			return brand + " " + cardVersion;
+		}
+
+		let defaultRes = String(window.outerWidth) + " x " + String(window.innerHeight);
+		let pristineRes = String(window.outerWidth*2) + " x " + String(window.innerHeight*2);
+		
+		let preset = {
+			id: "PRESET",
+			options: ["OFF"],
+			values: [false],
+			blurb: `This allows quick modification of all graphics settings to a set of pre-defined choices. <br><br>
+					The 'High' preset is our recommended setting for the best balance between performance and visuals on PCs
+					that meet the recommended hardware requirements for the game.`
+		};
+
+		let displayResolution = {
+			id: "DISPLAY RESOLUTION",
+			options: [pristineRes, defaultRes, "1920 x 1080", "1280 x 720", "854 x 480", "640 x 360"],
+			values: ["pristine", "default", "1080", "720", "480", "360"],
+			blurb: `This setting impacts the clarity and visual fidelity of your game. 
+					<br><br> Higher resolutions are our recommended setting for PCs
+					that meet the recommended hardware requirements for the game.`
+		};
+
+		let normalMapping = {
+			id: "NORMAL MAPPING",
+			options: ["ON", "OFF"],
+			values: ["true", "false"],
+			blurb: `This setting toggles complex lighting and appearences of low 
+					detail objects. This setting has a medium impact on performance.`
+		};
+
+		let hdr = {
+			id: "HDR",
+			options: ["OFF", "DEFAULT", "LOW", "ULTRA", "PRISTINE", "ULTRA-PRISTINE"],
+			values: ["0", "7", "3", "15", "29", "101"],
+			blurb: `Changes the quality of the grass.`
+		}
+
+		let antiAliasingP = {
+			id: "ANTI-ALIASING",
+			options: ["OFF", "FXAA"],
+			values: ["false", "fxaa"],
+			blurb: `Techniques to reduce pixel artifacts on edges. Selecting anything less 
+					than FXAA cause artifacts`
+		}
+
+		var showSettings = false;
+		var showOverlay = true;
+
+		function keyPressed(e){
+			if (e.key == "o") {
+				showOverlay = !showOverlay;
+				let overlay = document.getElementById("OVERLAY");
+				if (!showOverlay) {
+					overlay.style.display = "none";
+				}
+				else {
+					overlay.style.display = "block";
+				}
+			}
+
+			if (e.key == "Escape") {
+				showSettings = !showSettings;
+				let settings = document.getElementById("SETTINGS");
+				if (!showSettings) {
+					settings.style.display = "none";
+				}
+				else {
+					settings.style.display = "block";
+				}
+			}
+
+			if (e.key == "c") {
+				let title = document.getElementById("TITLE");
+				let controls = document.getElementById("CONTROLS");
+				title.style.display = "none";
+				if (title.value != "game") {
+					controls.style.display = "block";	
+				}			
+			}
+
+			if (e.key == "p") {
+				let title = document.getElementById("TITLE");
+				let controls = document.getElementById("CONTROLS");
+				title.value = "game";
+				controls.style.display = "none";
+			}
+		}
+
+		function onInit() {
+			setValue(preset, 0);
+			setValue(displayResolution, 1);
+			setValue(normalMapping, 0);
+			setValue(hdr, 1);
+			setValue(antiAliasingP, 1);
+
+			let gpu = document.getElementById("GPU");
+			gpu.textContent = getActiveGPU();
+
+			addEventListener("keydown", keyPressed);
+		}
+
+		function setValue(setting, index) {
+			let doc = document.getElementById(setting.id);
+			doc.textContent = setting.options[index];
+			doc.value = setting.values[index];
+		}
+
+
+		//    HOVERS    //
+
+
+		function presetHover() {
+			let blurb = document.getElementsByClassName("blurb")[0];
+			blurb.innerHTML = preset.blurb;
+		}
+
+		function resolutionHover() {
+			let blurb = document.getElementsByClassName("blurb")[0];
+			blurb.innerHTML = displayResolution.blurb;
+		}
+
+		function normalMappingHover() {
+			let blurb = document.getElementsByClassName("blurb")[0];
+			blurb.innerHTML = normalMapping.blurb;
+		}
+
+		function hdrHover() {
+			let blurb = document.getElementsByClassName("blurb")[0];
+			blurb.innerHTML = hdr.blurb;
+		}
+
+		function aliasingHover() {
+			let blurb = document.getElementsByClassName("blurb")[0];
+			blurb.innerHTML = antiAliasingP.blurb;
+		}
+
+
+		//    CHANGING SETTINGS    //
+
+
+		function onChange(setting, left) {
+			let i;
+			if (left) {
+				i = -1;
+			}
+			else {
+				i = 1;
+			}
+
+			let doc = document.getElementById(setting.id);
+			let index = setting.options.indexOf(doc.textContent);
+			let length = setting.options.length;
+
+			doc.textContent = setting.options[(index + i + length) % length];
+			doc.value = setting.values[(index + i + length) % length];
+			doc.onchange();
+		}
+
+		function resolutionChange(left) {
+			onChange(displayResolution, left);
+		}
+
+		function normalMappingChange(left) {
+			onChange(normalMapping, left);
+		}
+
+		function hdrChange(left) {
+			onChange(hdr, left);
+		}
+
+		function aliasingChange(left) {
+			onChange(antiAliasingP, left);
+		}
+
+    document.addEventListener("DOMContentLoaded", onInit);
+	</script>
+
+	<script src="js/main.js"></script>
 </html>
