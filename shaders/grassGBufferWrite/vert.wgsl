@@ -1,3 +1,4 @@
+// Structures used for bind groups
 struct Matrices {
     projectionMatrix : mat4x4<f32>,
     camTranslationMatrix : mat4x4<f32>,
@@ -24,6 +25,7 @@ struct Delta {
     value: f32,
 }
 
+// Bind Groups -> bind data from outside the shader, including per-blade grass data
 @group(0) @binding(0) var<uniform> matrices: Matrices;
 @group(1) @binding(0) var<storage, read> grassData: array<BladeInfo>;
 @group(1) @binding(1) var tSampler: sampler;
@@ -31,24 +33,18 @@ struct Delta {
 @group(1) @binding(3) var<uniform> deltaT: Delta;
 
 
-// YELLOW GREEN
-// const tipColor = vec3f(0.5, 0.5, 0.1);
-// const baseColor = vec3f(0.05, 0.2, 0.01);
-
-// GREEN
-// const tipColor = vec3f(0.05, 0.2, 0.01);
-// const baseColor = vec3f(0.05, 0.2, 0.01);
-
-// YELLOW
+// Color Customisation for grass blades
 const tipColor = vec3f(1, 0.84, 0) / 7;
 const baseColor = vec3f(0.57, 0.58, 0.21) / 7;
 
 const HALF_PI = 1.5707963267948966;
 
+// ease in function
 fn sineIn(t: f32) -> f32 {
     return sin((t - 1.0) * HALF_PI) + 1.0;
 }
 
+// rotation functions
 fn rotateY(vector: vec3<f32>, rotation: f32) -> vec3<f32> {
     let sinVal = sin(rotation);
     let cosVal = cos(rotation);
@@ -61,6 +57,7 @@ fn rotateX(vector: vec3<f32>, rotation: f32) -> vec3<f32> {
     return vec3f(vector.x, vector.y * cosVal - vector.z * sinVal, vector.y * sinVal + vector.z * cosVal);
 }
 
+// hash function adopted from glsl
 fn murmurHash12(s: vec2<u32>) -> u32{
     const M = 0x5bd1e995u;
     var h = 1190494759u;
@@ -76,6 +73,7 @@ fn hash12(src: vec2<f32>) -> f32{
     return bitcast<f32>((h & 0x007fffffu) | 0x3f800000u) - 1.0;
 }
 
+// perlin noise function adopted from glsl
 fn noise12(p: vec2<f32>) -> f32 {
     let i = floor(p);
 
@@ -89,43 +87,42 @@ fn noise12(p: vec2<f32>) -> f32 {
     return val;
 }
 
+// vertex shader
 @vertex fn vs(
     @builtin(instance_index) instanceID : u32,
     @location(0) position : vec3<f32>) -> vsOutput {
 
+    // fetch per blade data
     var vsOut = vsOutput();
     let grass = grassData[instanceID];
     let offset = vec3f(grass.x, grass.y, grass.z);
-
     let heightPercent = position.y / 1;
 
-    // position manipulation  
+    // Take two noise samples then use that to curve the grass blade, then rotate the entire grass blade.
+    // Used to create a flappy effect
     let noiseSample = noise12(vec2f((vec2f(deltaT.value * 2) + offset.xz / 4) * 0.5));
     let noiseSample2 = noise12(vec2f((vec2f(deltaT.value * 0.25) + offset.xz / 4) * 2));
     let cAmount = ((noiseSample - 0.3) * 2) * 1 + (grass.lean * 0.5) + (-noiseSample2 * 0.1);
     let rotAmount = noiseSample / 2 + 0.25;
 
-    var aPosition= rotateX(position, (heightPercent / 2 * cAmount));
+    // apply the rotations and transformations from above
+    var aPosition = rotateX(position, (heightPercent / 2 * cAmount));
     aPosition = rotateX(aPosition, rotAmount);
-    aPosition = rotateY(aPosition, grass.rotation/10 + 3.92699081699);
+    aPosition = rotateY(aPosition, grass.rotation / 10 + 3.92699081699);
     aPosition += offset;
 
-    let fragPosition = vec4f(aPosition, 1) * matrices.camTranslationMatrix * matrices.camRotationMatrix;
-
-
-
+    // set normal
     var normal = vec3f(0, 0, -1);
-    // inverse normal
     normal = normalize(vec3f(normal.x, normal.y, -normal.z));
 
-    // rotate normal
+    // rotate normal from values above
     normal = rotateX(normal, -(heightPercent * cAmount));
     normal = rotateX(normal, -rotAmount);
-    normal = normalize(rotateY(normal, -(grass.rotation/10 + 3.92699081699)));
+    normal = normalize(rotateY(normal, -(grass.rotation / 10 + 3.92699081699)));
     normal = normalize(normal + vec3f(position.x * 15, 0, 0));
     
-
     // return values
+    let fragPosition = vec4f(aPosition, 1) * matrices.camTranslationMatrix * matrices.camRotationMatrix;
     vsOut.normal = normalize(normal * transpose(matrices.invCamRotationMatrix)); 
     vsOut.position = fragPosition.xyz;    
     vsOut.color = mix(baseColor, tipColor, sineIn(heightPercent));

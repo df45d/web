@@ -1,8 +1,10 @@
+// fragment shader
 @fragment fn fs(vsOut: vsOutput) -> @location(0) vec4<f32> {
+    // colors for atmospher
     let baseColor = vec3f(0.06, 0.18, 0.37);
     let bottomColor = 0.3 - (1 - baseColor);
-
-
+    
+    // 
     let normal = normalize(vsOut.normal);
     let yPlaneLength = length(vec2f(normal.x, normal.z));
 
